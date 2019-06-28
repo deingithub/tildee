@@ -1,9 +1,16 @@
 [tool.poetry]
 name = "tildee"
-version = "0.1.0"
+version = "0.2.0"
 description = "A client for tildes.net"
 license = "MIT"
+readme = "README.md"
 authors = ["deing <admin@15318.de>"]
+classifiers = [
+	"Operating System :: OS Independent",
+	"Topic :: Internet :: WWW/HTTP",
+	"Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"

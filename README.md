@@ -8,10 +8,3 @@ This uses [Poetry](https://poetry.eustace.io/) to manage dependencies and [Black
 
 ## Development
 To install dependencies, run `poetry install`. You can run a python shell in the environment using `poetry run python` (I'd recommend using `ipython`, too). Format your code before committing by running `black .`.
-
-## Todo
- - Tests if I find a way to do this meaningfully
- - 2FA support for logging in
- - Stabilize, clean up and publish on PyPI
- - Implement applying comment labels
- - Implement parsing topic logs and vote counts

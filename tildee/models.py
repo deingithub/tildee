@@ -14,9 +14,9 @@ class TildesTopic:
 
         self.title = self._tree.cssselect("article.topic-full > header > h1")[0].text
         try:
-            self.content_html = etree.tostring(
+            self.content_html = str(etree.tostring(
                 self._tree.cssselect("div.topic-full-text")[0]
-            )
+            ))
         except IndexError:
             self.content_html = None
 
@@ -48,7 +48,7 @@ class TildesComment:
         self.timestamp = self._tree.cssselect("time.comment-posted-time")[0].attrib[
             "datetime"
         ]
-        self.content_html = etree.tostring(self._tree.cssselect("div.comment-text")[0])
+        self.content_html = str(etree.tostring(self._tree.cssselect("div.comment-text")[0]))
         self.children = []
         comments = self._tree.cssselect("ol.comment-tree-replies > li > article")
         for comment in comments:
@@ -101,4 +101,4 @@ class TildesMessage:
         self.timestamp = self._tree.cssselect("time.time-responsive")[0].attrib[
             "datetime"
         ]
-        self.content_html = etree.tostring(self._tree.cssselect("div.message-text")[0])
+        self.content_html = str(etree.tostring(self._tree.cssselect("div.message-text")[0]))
