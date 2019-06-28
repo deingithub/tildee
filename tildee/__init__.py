@@ -1,7 +1,8 @@
 __version__ = "0.1.0"
 
 import requests
-from lxml import html
+from lxml import html, etree
+from tildee.models import TildesTopic, TildesComment, TildesNotification
 
 
 class TildesClient:
@@ -71,9 +72,27 @@ class TildesClient:
         r.raise_for_status()
         return r
 
-    def _ic_post(self, route, **kwargs):
-        """Make a request using HTTP POST, adding an Intercooler header. Intended for internal use."""
+    def _ic_req(self, route, method=None, ic_trigger=None, **kwargs):
         r = requests.post(
+            self.base_url + route,
+            cookies=self._cookies,
+            headers={
+                "x-ic-request": "true",
+                "X-HTTP-Method-Override": method,
+                **self._headers,
+            },
+            data={
+                "csrf_token": self._csrf_token,
+                "ic-trigger-name": ic_trigger,
+                **kwargs,
+            },
+            verify=self._verify_ssl,
+        )
+        r.raise_for_status()
+        return r
+
+    def _ic_get(self, route, **kwargs):
+        r = requests.get(
             self.base_url + route,
             cookies=self._cookies,
             headers={"x-ic-request": "true", **self._headers},
@@ -94,28 +113,121 @@ class TildesClient:
         Returns new comment's id36."""
         r = None
         if top_level:
-            r = self._ic_post(
+            r = self._ic_req(
                 f"/api/web/topics/{parent_id36}/comments", markdown=markdown
             )
         else:
-            r = self._ic_post(
+            r = self._ic_req(
                 f"/api/web/comments/{parent_id36}/replies", markdown=markdown
             )
         tree = html.fromstring(r.text)
         return tree.cssselect("article")[0].attrib["data-comment-id36"]
 
     def fetch_topic(self, topic_id36):
-        """Returns a topic as an object for further processing"""
+        """Fetches, parses and returns a topic as a TildesTopic object for further processing."""
         r = self._get(f"/~group_name_here/{topic_id36}")
         return TildesTopic(r.text)
 
+    def fetch_comment(self, comment_id36):
+        """Fetches, parses and returns a comment as a TildesComment object for further processing.
+        This endpoint doesn't include children comments."""
+        r = self._ic_get(f"/api/web/comments/{comment_id36}")
+        fake_article = f'<article class="comment" data-comment-id36="{comment_id36}">{r.text}</article>'
+        return TildesComment(fake_article)
 
-class TildesTopic:
-    def __init__(self, text):
-        self._tree = html.fromstring(text)
+    def edit_topic(self, topic_id36, **kwargs):
+        """Interact with a topic in nearly any way possible.
+        Allows editing tags, group, title, link and content as well as setting and removing bookmarks/votes.
+        Server permission limits still apply, obviously."""
+        if "tags" in kwargs:
+            self._ic_req(
+                f"/api/web/topics/{topic_id36}/tags", "PUT", tags=kwargs["tags"]
+            )
+        if "group" in kwargs:
+            self._ic_req(
+                f"/api/web/topics/{topic_id36}",
+                "PATCH",
+                "topic-move",
+                group_path=kwargs["group"],
+            )
+        if "title" in kwargs:
+            self._ic_req(
+                f"/api/web/topics/{topic_id36}",
+                "PATCH",
+                "topic-title-edit",
+                title=kwargs["title"],
+            )
+        if "link" in kwargs:
+            self._ic_req(
+                f"/api/web/topics/{topic_id36}",
+                "PATCH",
+                "topic-link-edit",
+                link=kwargs["link"],
+            )
+        if "content" in kwargs:
+            self._ic_req(
+                f"/api/web/topics/{topic_id36}", "PATCH", markdown=kwargs["content"]
+            )
+        if "vote" in kwargs:
+            if kwargs["vote"]:
+                self._ic_req(f"/api/web/topics/{topic_id36}/vote", "PUT", "vote")
+            else:
+                self._ic_req(f"/api/web/topics/{topic_id36}/vote", "DELETE", "vote")
+        if "bookmark" in kwargs:
+            if kwargs["bookmark"]:
+                self._ic_req(f"/api/web/topics/{topic_id36}/bookmark", "PUT")
+            else:
+                self._ic_req(f"/api/web/topics/{topic_id36}/bookmark", "DELETE")
 
-    def tags(self):
-        tags = []
-        for element in self._tree.cssselect("ul.topic-tags > li > a"):
-            tags.append(element.text)
-        return tags
+    def moderate_topic(self, topic_id36, **kwargs):
+        """Moderate a topic, setting its locked/removed status."""
+        if "lock" in kwargs:
+            if kwargs["lock"]:
+                self._ic_req(f"/api/web/topics/{topic_id36}/lock", "PUT")
+            else:
+                self._ic_req(f"/api/web/topics/{topic_id36}/lock", "DELETE")
+        if "remove" in kwargs:
+            if kwargs["remove"]:
+                self._ic_req(f"/api/web/topics/{topic_id36}/remove", "PUT")
+            else:
+                self._ic_req(f"/api/web/topics/{topic_id36}/remove", "DELETE")
+
+    def edit_comment(self, comment_id36, **kwargs):
+        """Interact with a comment in nearly any way possible.
+        Allows editing content as well as setting and removing bookmarks/votes.
+        Server permission limits still apply, obviously."""
+        if "content" in kwargs:
+            self._ic_req(
+                f"/api/web/comments/{comment_id36}", "PATCH", markdown=kwargs["content"]
+            )
+        if "vote" in kwargs:
+            if kwargs["vote"]:
+                self._ic_req(f"/api/web/comments/{comment_id36}/vote", "PUT", "vote")
+            else:
+                self._ic_req(f"/api/web/comments/{comment_id36}/vote", "DELETE", "vote")
+        if "bookmark" in kwargs:
+            if kwargs["bookmark"]:
+                self._ic_req(f"/api/web/comments/{comment_id36}/bookmark", "PUT")
+            else:
+                self._ic_req(f"/api/web/comments/{comment_id36}/bookmark", "DELETE")
+
+    def moderate_comment(self, comment_id36, **kwargs):
+        """Moderate a comment, setting its removed status."""
+        if "remove" in kwargs:
+            if kwargs["remove"]:
+                self._ic_req(f"/api/web/comments/{comment_id36}/remove", "PUT")
+            else:
+                self._ic_req(f"/api/web/comments/{comment_id36}/remove", "DELETE")
+
+    def fetch_unread_notifications(self):
+        """Fetches, parses and returns a list of unread notifications as TildesNotification objects for further processing."""
+        r = self._get(f"/notifications/unread")
+        tree = html.fromstring(r.text)
+        notifications = tree.cssselect("ol.post-listing-notifications > li")
+        output = []
+        for notification in notifications:
+            output.append(TildesNotification(etree.tostring(notification)))
+        return output
+
+    def mark_notification_as_read(self, subject_id36):
+        self._ic_req(f"/api/web/comments/{subject_id36}/mark_read", "PUT")
