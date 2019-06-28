@@ -15,7 +15,10 @@ class TildesClient:
         Override base_url and if necessary verify_ssl to change the site Tildee uses."""
         self.username = username
         self.base_url = base_url
-        self._headers = {"Referer": base_url}
+        self._headers = {
+            "Referer": base_url,
+            "User-Agent": f"tildee.py Client [as {self.username}]",
+        }
         self._verify_ssl = verify_ssl
         self._login(password)
 
