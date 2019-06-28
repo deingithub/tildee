@@ -15,13 +15,13 @@ class TildesClient:
         Override base_url and if necessary verify_ssl to change the site Tildee uses."""
         self.username = username
         self.base_url = base_url
-        self.__headers__ = {"Referer": base_url}
-        self.__verify_ssl__ = verify_ssl
-        self.__login__(password)
+        self._headers = {"Referer": base_url}
+        self._verify_ssl = verify_ssl
+        self._login(password)
 
-    def __login__(self, password):
-        login_page = requests.get(self.base_url + "/login", verify=self.__verify_ssl__)
-        self.__csrf_token__ = (
+    def _login(self, password):
+        login_page = requests.get(self.base_url + "/login", verify=self._verify_ssl)
+        self._csrf_token = (
             html.fromstring(login_page.content)
             .cssselect("meta[name=csrftoken]")[0]
             .attrib["content"]
@@ -29,60 +29,71 @@ class TildesClient:
         login_request = requests.post(
             self.base_url + "/login",
             data={
-                "csrf_token": self.__csrf_token__,
+                "csrf_token": self._csrf_token,
                 "username": self.username,
                 "password": password,
             },
             cookies=login_page.cookies,
-            headers=self.__headers__,
-            verify=self.__verify_ssl__,
+            headers=self._headers,
+            verify=self._verify_ssl,
         )
         login_request.raise_for_status()
-        self.__cookies__ = login_page.cookies
+        self._cookies = login_page.cookies
 
-    def get(self, route):
+    def _get(self, route):
         """Fetch a page using HTTP GET. Intended for internal use."""
         r = requests.get(
             self.base_url + route,
-            cookies=self.__cookies__,
-            headers=self.__headers__,
-            verify=self.__verify_ssl__,
+            cookies=self._cookies,
+            headers=self._headers,
+            verify=self._verify_ssl,
         )
         r.raise_for_status()
         return r
 
-    def post(self, route, **kwargs):
+    def _post(self, route, **kwargs):
         """Make a request using HTTP POST. Intended for internal use."""
         r = requests.post(
             self.base_url + route,
-            cookies=self.__cookies__,
-            headers=self.__headers__,
-            data={"csrf_token": self.__csrf_token__, **kwargs},
-            verify=self.__verify_ssl__,
+            cookies=self._cookies,
+            headers=self._headers,
+            data={"csrf_token": self._csrf_token, **kwargs},
+            verify=self._verify_ssl,
         )
         r.raise_for_status()
         return r
 
-    def ic_post(self, route, **kwargs):
+    def _ic_post(self, route, **kwargs):
         """Make a request using HTTP POST, adding an Intercooler header. Intended for internal use."""
         r = requests.post(
             self.base_url + route,
-            cookies=self.__cookies__,
-            headers={"x-ic-request": "true", **self.__headers__},
-            data={"csrf_token": self.__csrf_token__, **kwargs},
-            verify=self.__verify_ssl__,
+            cookies=self._cookies,
+            headers={"x-ic-request": "true", **self._headers},
+            data={"csrf_token": self._csrf_token, **kwargs},
+            verify=self._verify_ssl,
         )
         r.raise_for_status()
         return r
 
     def create_topic(self, group, title, tags, **kwargs):
         """Post a topic into a group (without ~).
-        Keyword arguments: `link` and/or `markdown`."""
-        self.post(f"/~{group}/topics", title=title, tags=tags, **kwargs)
+        Keyword arguments: `link` and/or `markdown`.
+        Returns new topic's id36."""
+        r = self._post(f"/~{group}/topics", title=title, tags=tags, **kwargs)
+        return r.url.split("/")[-2]
 
     def create_comment(self, parent_id36, markdown, top_level=True):
-        """Post a comment."""
+        """Post a comment.
+        Returns new comment's id36."""
+        r = None
         if top_level:
-            self.ic_post(f"/api/web/topics/{parent_id36}/comments", markdown=markdown)
+            r = self._ic_post(
+                f"/api/web/topics/{parent_id36}/comments", markdown=markdown
+            )
         else:
-            self.ic_post(f"/api/web/comments/{parent_id36}/replies", markdown=markdown)
+            r = self._ic_post(
+                f"/api/web/comments/{parent_id36}/replies", markdown=markdown
+            )
+        return (
+            html.fromstring(r.text).cssselect("article")[0].attrib["data-comment-id36"]
+        )
