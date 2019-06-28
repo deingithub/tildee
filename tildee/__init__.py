@@ -245,3 +245,11 @@ class TildesClient:
         """Fetches, parses and returns a conversation as TildesConversation object for further processing."""
         r = self._get(f"/messages/conversations/{convo_id36}")
         return TildesConversation(r.text)
+
+    def create_message(self, convo_id36, markdown):
+        """Creates a message in an existing conversation."""
+        self._ic_req(f"/api/web/messages/conversations/{convo_id36}/replies", markdown=markdown)
+
+    def create_conversation(self, username, subject, markdown):
+        """Creates a new conversation with a user."""
+        self._ic_req(f"/user/{username}/messages", subject=subject, markdown=markdown)
