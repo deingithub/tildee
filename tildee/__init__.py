@@ -2,7 +2,7 @@ __version__ = "0.1.0"
 
 import requests
 from lxml import html, etree
-from tildee.models import TildesTopic, TildesComment, TildesNotification
+from tildee.models import TildesTopic, TildesComment, TildesNotification, TildesConversation
 
 
 class TildesClient:
@@ -231,3 +231,17 @@ class TildesClient:
 
     def mark_notification_as_read(self, subject_id36):
         self._ic_req(f"/api/web/comments/{subject_id36}/mark_read", "PUT")
+
+    def fetch_unread_message_ids(self):
+        """Fetches IDs of unread messages."""
+        r = self._get("/messages/unread")
+        tree = html.fromstring(r.text)
+        new_messages = []
+        for message_entry in tree.cssselect("tr.message-list-unread > td.message-list-subject > a"):
+            new_messages.append(message_entry.attrib["href"].split("/")[-1])
+        return new_messages
+
+    def fetch_conversation(self, convo_id36):
+        """Fetches, parses and returns a conversation as TildesConversation object for further processing."""
+        r = self._get(f"/messages/conversations/{convo_id36}")
+        return TildesConversation(r.text)

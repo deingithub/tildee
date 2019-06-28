@@ -79,3 +79,24 @@ class TildesNotificationKind(Enum):
     MENTION = auto()
     TOPIC_REPLY = auto()
     COMMENT_REPLY = auto()
+
+class TildesConversation:
+    """Represents a conversation on Tildes."""
+
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+        self.title = self._tree.cssselect("h1.heading-main")[0].text
+        self.entries = []
+        for entry in self._tree.cssselect("article.message"):
+            self.entries.append(TildesMessage(etree.tostring(entry)))
+
+class TildesMessage:
+    """Represents a message in a conversation on Tildes."""
+
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+        self.author = self._tree.cssselect("a.link-user")[0].text
+        self.timestamp = self._tree.cssselect("time.time-responsive")[0].attrib[
+            "datetime"
+        ]
+        self.content_html = etree.tostring(self._tree.cssselect("div.message-text")[0])
