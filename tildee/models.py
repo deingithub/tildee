@@ -80,6 +80,7 @@ class TildesNotificationKind(Enum):
     TOPIC_REPLY = auto()
     COMMENT_REPLY = auto()
 
+
 class TildesConversation:
     """Represents a conversation on Tildes."""
 
@@ -89,6 +90,7 @@ class TildesConversation:
         self.entries = []
         for entry in self._tree.cssselect("article.message"):
             self.entries.append(TildesMessage(etree.tostring(entry)))
+
 
 class TildesMessage:
     """Represents a message in a conversation on Tildes."""

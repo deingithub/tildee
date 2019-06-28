@@ -2,7 +2,12 @@ __version__ = "0.1.0"
 
 import requests
 from lxml import html, etree
-from tildee.models import TildesTopic, TildesComment, TildesNotification, TildesConversation
+from tildee.models import (
+    TildesTopic,
+    TildesComment,
+    TildesNotification,
+    TildesConversation,
+)
 
 
 class TildesClient:
@@ -237,7 +242,9 @@ class TildesClient:
         r = self._get("/messages/unread")
         tree = html.fromstring(r.text)
         new_messages = []
-        for message_entry in tree.cssselect("tr.message-list-unread > td.message-list-subject > a"):
+        for message_entry in tree.cssselect(
+            "tr.message-list-unread > td.message-list-subject > a"
+        ):
             new_messages.append(message_entry.attrib["href"].split("/")[-1])
         return new_messages
 
@@ -248,7 +255,9 @@ class TildesClient:
 
     def create_message(self, convo_id36, markdown):
         """Creates a message in an existing conversation."""
-        self._ic_req(f"/api/web/messages/conversations/{convo_id36}/replies", markdown=markdown)
+        self._ic_req(
+            f"/api/web/messages/conversations/{convo_id36}/replies", markdown=markdown
+        )
 
     def create_conversation(self, username, subject, markdown):
         """Creates a new conversation with a user."""
