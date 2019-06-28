@@ -100,11 +100,18 @@ class TildesClient:
         tree = html.fromstring(r.text)
         return tree.cssselect("article")[0].attrib["data-comment-id36"]
 
-    def fetch_topic_tags(self, topic_id36):
-        """Returns the list of tags a topic has."""
+    def fetch_topic(self, topic_id36):
+        """Returns a topic as an object for further processing"""
         r = self._get(f"/~group_name_here/{topic_id36}")
-        tree = html.fromstring(r.text)
+        return TildesTopic(r.text)
+
+
+class TildesTopic:
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+
+    def tags(self):
         tags = []
-        for element in tree.cssselect("ul.topic-tags > li > a"):
+        for element in self._tree.cssselect("ul.topic-tags > li > a"):
             tags.append(element.text)
         return tags
