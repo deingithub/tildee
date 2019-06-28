@@ -97,6 +97,14 @@ class TildesClient:
             r = self._ic_post(
                 f"/api/web/comments/{parent_id36}/replies", markdown=markdown
             )
-        return (
-            html.fromstring(r.text).cssselect("article")[0].attrib["data-comment-id36"]
-        )
+        tree = html.fromstring(r.text)
+        return tree.cssselect("article")[0].attrib["data-comment-id36"]
+
+    def fetch_topic_tags(self, topic_id36):
+        """Returns the list of tags a topic has."""
+        r = self._get(f"/~group_name_here/{topic_id36}")
+        tree = html.fromstring(r.text)
+        tags = []
+        for element in tree.cssselect("ul.topic-tags > li > a"):
+            tags.append(element.text)
+        return tags
