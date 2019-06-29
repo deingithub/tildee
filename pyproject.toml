@@ -1,10 +1,12 @@
 [tool.poetry]
 name = "tildee"
-version = "0.2.2"
+version = "0.2.3"
 description = "A client for tildes.net"
 license = "MIT"
 readme = "README.md"
 authors = ["deing <admin@15318.de>"]
+homepage = "https://tildee.readthedocs.io/en/latest/index.html"
+repository = "https://git.dingenskirchen.systems/Dingens/tildee.py"
 classifiers = [
 	"Operating System :: OS Independent",
 	"Topic :: Internet :: WWW/HTTP",

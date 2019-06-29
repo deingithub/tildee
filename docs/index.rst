@@ -4,6 +4,7 @@ Tildee — A Tildes Client Library
 This is Tildee, a Python 3 library for interacting with the https://tildes.net API. Note that this API is not stable and not actually intended for external use, so this could break at any moment.
 
 `Source code <https://git.dingenskirchen.systems/Dingens/tildee.py>`_ and `issue tracker <https://git.dingenskirchen.systems/Dingens/tildee.py/issues>`_ on Dingenskirchen Systems Git.
+Available on `PyPI <https://pypi.org/project/tildee/>`_.
 
 Capabilities
 ------------
