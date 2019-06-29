@@ -22,5 +22,5 @@ cssselect = "^1.0"
 pytest = "^3.0"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry>=0.12", "rtd-poetry"]
+build-backend = "rtd_poetry"
