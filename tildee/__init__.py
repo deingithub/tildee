@@ -1,6 +1,7 @@
-__version__ = "0.1.0"
+__version__ = "0.2.1"
 
 import requests
+from requests import Response
 from lxml import html, etree
 from tildee.models import (
     TildesTopic,
@@ -8,16 +9,28 @@ from tildee.models import (
     TildesNotification,
     TildesConversation,
 )
+from typing import Union, List, Optional
 
 
 class TildesClient:
     """A client for the (unstable) Tildes API."""
 
     def __init__(
-        self, username, password, base_url="https://tildes.net", verify_ssl=True
+        self,
+        username: str,
+        password: str,
+        base_url: str = "https://tildes.net",
+        verify_ssl: bool = True,
     ):
-        """Logs in using username and password.
-        Override base_url and if necessary verify_ssl to change the site Tildee uses."""
+        """Initializes client and logs in.
+
+        Doesn't yet support 2FA.
+        Arguments:
+        username -- The username to log in with.
+        password -- The password to log in with.
+        base_url -- The site to log in to. Default: https://tildes.net
+        verify_ssl -- Wether to check SSL cert validity. Default: True.
+        """
         self.username = username
         self.base_url = base_url
         self._headers = {
@@ -30,7 +43,7 @@ class TildesClient:
     def __del__(self):
         self._logout()
 
-    def _login(self, password):
+    def _login(self, password: str):
         login_page = requests.get(
             self.base_url + "/login", headers=self._headers, verify=self._verify_ssl
         )
@@ -56,7 +69,7 @@ class TildesClient:
     def _logout(self):
         self._post("/logout")
 
-    def _get(self, route):
+    def _get(self, route: str) -> Response:
         r = requests.get(
             self.base_url + route,
             cookies=self._cookies,
@@ -66,7 +79,7 @@ class TildesClient:
         r.raise_for_status()
         return r
 
-    def _post(self, route, **kwargs):
+    def _post(self, route: str, **kwargs) -> Response:
         r = requests.post(
             self.base_url + route,
             cookies=self._cookies,
@@ -77,7 +90,13 @@ class TildesClient:
         r.raise_for_status()
         return r
 
-    def _ic_req(self, route, method=None, ic_trigger=None, **kwargs):
+    def _ic_req(
+        self,
+        route: str,
+        method: Optional[str] = None,
+        ic_trigger: Optional[str] = None,
+        **kwargs,
+    ) -> Response:
         r = requests.post(
             self.base_url + route,
             cookies=self._cookies,
@@ -96,7 +115,7 @@ class TildesClient:
         r.raise_for_status()
         return r
 
-    def _ic_get(self, route, **kwargs):
+    def _ic_get(self, route: str, **kwargs) -> Response:
         r = requests.get(
             self.base_url + route,
             cookies=self._cookies,
@@ -107,15 +126,35 @@ class TildesClient:
         r.raise_for_status()
         return r
 
-    def create_topic(self, group, title, tags, **kwargs):
-        """Post a topic into a group (without ~).
-        Returns new topic's id36."""
+    def create_topic(
+        self, group: str, title: str, tags: Union[str, List[str]], **kwargs
+    ) -> str:
+        """Post a topic into a group, returns new topic's id36.
+
+        Arguments:
+        group -- The group to post in, without a ~ in front.
+        title -- The topic's title.
+        tags -- Comma separated string or list of tags.
+
+        Keyword Arguments:
+        markdown -- The topic's content as markdown.
+        link -- The topic's link.
+        """
+        if isinstance(tags, list):
+            # Stringify list and remove braces
+            tags = str(tags)[1:-1]
         r = self._post(f"/~{group}/topics", title=title, tags=tags, **kwargs)
         return r.url.split("/")[-2]
 
-    def create_comment(self, parent_id36, markdown, top_level=True):
-        """Post a comment.
-        Returns new comment's id36."""
+    def create_comment(
+        self, parent_id36: str, markdown: str, top_level: bool = True
+    ) -> str:
+        """Post a comment, returns new comment's id36.
+
+        Arguments:
+        markdown -- The comment's content as markdown.
+        parent_id36 -- The parent entity's id36. Can be a topic or comment.
+        top_level -- Set this to False if the comment's a reply to another comment."""
         r = None
         if top_level:
             r = self._ic_req(
@@ -128,23 +167,43 @@ class TildesClient:
         tree = html.fromstring(r.text)
         return tree.cssselect("article")[0].attrib["data-comment-id36"]
 
-    def fetch_topic(self, topic_id36):
-        """Fetches, parses and returns a topic as a TildesTopic object for further processing."""
+    def fetch_topic(self, topic_id36: str) -> TildesTopic:
+        """Fetches, parses and returns a topic as an object for further processing.
+
+        Arguments:
+        topic_id36 -- The id36 of the topic to fetch."""
         r = self._get(f"/~group_name_here/{topic_id36}")
         return TildesTopic(r.text)
 
-    def fetch_comment(self, comment_id36):
-        """Fetches, parses and returns a comment as a TildesComment object for further processing.
-        This endpoint doesn't include children comments."""
+    def fetch_comment(self, comment_id36: str) -> TildesComment:
+        """Fetches, parses and returns a single comment as an object for further processing.
+
+        This endpoint doesn't include a comments' children.
+
+        Arguments:
+        comment_id36 -- The id36 of the comment to fetch."""
         r = self._ic_get(f"/api/web/comments/{comment_id36}")
         fake_article = f'<article class="comment" data-comment-id36="{comment_id36}">{r.text}</article>'
         return TildesComment(fake_article)
 
-    def edit_topic(self, topic_id36, **kwargs):
-        """Interact with a topic in nearly any way possible.
-        Allows editing tags, group, title, link and content as well as setting and removing bookmarks/votes.
-        Server permission limits still apply, obviously."""
+    def edit_topic(self, topic_id36: str, **kwargs):
+        """Interact with a topic in nearly any way possible; permission limits still apply, obviously.
+
+        Arguments:
+        topic_id36 -- The id36 of the topic to act on.
+
+        Keyword arguments:
+        tags -- Comma separated string or list of tags.
+        group -- The new group for the topic, without ~ in front.
+        title -- The new title for the topic.
+        link -- The new link for the topic.
+        content -- The new markdown for the topic.
+        vote -- Boolean, vote/unvote this topic.
+        bookmark -- Boolean, bookmark/unbookmark this topic."""
         if "tags" in kwargs:
+            if isinstance(kwargs["tags"], list):
+                # Stringify list and remove braces
+                kwargs["tags"] = str(kwargs["tags"])[1:-1]
             self._ic_req(
                 f"/api/web/topics/{topic_id36}/tags", "PUT", tags=kwargs["tags"]
             )
@@ -211,10 +270,17 @@ class TildesClient:
             else:
                 self._ic_req(f"/api/web/topics/{topic_id36}/remove", "DELETE")
 
-    def edit_comment(self, comment_id36, **kwargs):
-        """Interact with a comment in nearly any way possible.
-        Allows editing content as well as setting and removing bookmarks/votes.
-        Server permission limits still apply, obviously."""
+    def edit_comment(self, comment_id36: str, **kwargs):
+        """Interact with a comment in nearly any way possible; permission limits still apply, obviously.
+
+        Arguments:
+        comment_id36 -- The id36 of the comment to act on.
+
+        Keyword Arguments:
+        content -- The new markdown for the comment.
+        vote -- Boolean, vote/unvote this comment.
+        bookmark -- Boolean, bookmark/unbookmark this comment.
+        """
         if "content" in kwargs:
             self._ic_req(
                 f"/api/web/comments/{comment_id36}", "PATCH", markdown=kwargs["content"]
@@ -251,7 +317,7 @@ class TildesClient:
             else:
                 self._ic_req(f"/api/web/comments/{comment_id36}/remove", "DELETE")
 
-    def fetch_unread_notifications(self):
+    def fetch_unread_notifications(self) -> List[TildesNotification]:
         """Fetches, parses and returns a list of unread notifications as TildesNotification objects for further processing."""
         r = self._get(f"/notifications/unread")
         tree = html.fromstring(r.text)
@@ -261,10 +327,14 @@ class TildesClient:
             output.append(TildesNotification(etree.tostring(notification)))
         return output
 
-    def mark_notification_as_read(self, subject_id36):
+    def mark_notification_as_read(self, subject_id36: str):
+        """Marks a notification as read.
+
+        Arguments:
+        subject_id36 -- The notification subject's id36 to mark."""
         self._ic_req(f"/api/web/comments/{subject_id36}/mark_read", "PUT")
 
-    def fetch_unread_message_ids(self):
+    def fetch_unread_message_ids(self) -> List[str]:
         """Fetches IDs of unread messages."""
         r = self._get("/messages/unread")
         tree = html.fromstring(r.text)
@@ -275,17 +345,29 @@ class TildesClient:
             new_messages.append(message_entry.attrib["href"].split("/")[-1])
         return new_messages
 
-    def fetch_conversation(self, convo_id36):
-        """Fetches, parses and returns a conversation as TildesConversation object for further processing."""
+    def fetch_conversation(self, convo_id36: str) -> TildesConversation:
+        """Fetches, parses and returns a conversation as TildesConversation object for further processing.
+
+        Arguments:
+        convo_id36 -- The target conversation's id36."""
         r = self._get(f"/messages/conversations/{convo_id36}")
         return TildesConversation(r.text)
 
-    def create_message(self, convo_id36, markdown):
-        """Creates a message in an existing conversation."""
+    def create_message(self, convo_id36: str, markdown: str):
+        """Creates a message in an existing conversation.
+
+        Arguments:
+        convo_id36 -- The target conversation's id36.
+        markdown -- The message's content as markdown."""
         self._ic_req(
             f"/api/web/messages/conversations/{convo_id36}/replies", markdown=markdown
         )
 
-    def create_conversation(self, username, subject, markdown):
-        """Creates a new conversation with a user."""
+    def create_conversation(self, username: str, subject: str, markdown: str):
+        """Creates a new conversation with a user.
+
+        Arguments:
+        username -- The username of the recipient.
+        subject -- The conversation's subject.
+        markdown -- The first message's content as markdown."""
         self._ic_req(f"/user/{username}/messages", subject=subject, markdown=markdown)
