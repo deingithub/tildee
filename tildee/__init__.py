@@ -300,7 +300,7 @@ class TildesClient:
         """Delete a comment.
 
         Arguments:
-        comment_id36 -- The id36 of the comment to delte."""
+        comment_id36 -- The id36 of the comment to delete."""
         self._ic_req(f"/api/web/comments/{comment_id36}", "DELETE")
 
     def moderate_comment(self, comment_id36: str, **kwargs):

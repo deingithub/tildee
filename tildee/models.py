@@ -31,7 +31,9 @@ class TildesTopic:
         self.author = self._tree.cssselect("a.link-user")[0].text
         self.timestamp = self._tree.cssselect("time")[0].attrib["datetime"]
         try:
-            self.num_votes = int(self._tree.cssselect("span.topic-voting-votes")[0].text)
+            self.num_votes = int(
+                self._tree.cssselect("span.topic-voting-votes")[0].text
+            )
         except IndexError:
             self.num_votes = 0
 
@@ -58,7 +60,9 @@ class TildesComment:
         )
         vote_btn_text = "0"
         try:
-            vote_btn_text = self._tree.cssselect("button[name='vote'], div.comment-votes")[0].text
+            vote_btn_text = self._tree.cssselect(
+                "button[name='vote'], div.comment-votes"
+            )[0].text
             self.num_votes = int(re.findall("[0-9]+", vote_btn_text)[0])
         except IndexError:
             self.num_votes = 0
