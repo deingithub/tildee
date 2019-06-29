@@ -4,7 +4,7 @@ import re
 
 
 class TildesTopic:
-    """"Represents a single topic on Tildes."""
+    """Represents a single topic on Tildes."""
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
