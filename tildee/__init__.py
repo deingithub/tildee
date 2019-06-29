@@ -184,8 +184,22 @@ class TildesClient:
             else:
                 self._ic_req(f"/api/web/topics/{topic_id36}/bookmark", "DELETE")
 
-    def moderate_topic(self, topic_id36, **kwargs):
-        """Moderate a topic, setting its locked/removed status."""
+    def delete_topic(self, topic_id36: str):
+        """Delete a topic.
+
+        Arguments:
+        topic_id36 -- The id36 of the topic to delete."""
+        self._ic_req(f"/api/web/topics/{topic_id36}", "DELETE")
+
+    def moderate_topic(self, topic_id36: str, **kwargs):
+        """Moderate a topic, setting its locked/removed status.
+
+        Arguments:
+        topic_id36 -- The id36 of the topic to act on.
+
+        Keyword Arguments:
+        lock -- Boolean, lock/unlock comments.
+        remove -- Boolean, remove/unremove this topic."""
         if "lock" in kwargs:
             if kwargs["lock"]:
                 self._ic_req(f"/api/web/topics/{topic_id36}/lock", "PUT")
@@ -216,8 +230,21 @@ class TildesClient:
             else:
                 self._ic_req(f"/api/web/comments/{comment_id36}/bookmark", "DELETE")
 
-    def moderate_comment(self, comment_id36, **kwargs):
-        """Moderate a comment, setting its removed status."""
+    def delete_comment(self, comment_id36: str):
+        """Delete a comment.
+
+        Arguments:
+        comment_id36 -- The id36 of the comment to delte."""
+        self._ic_req(f"/api/web/comments/{comment_id36}", "DELETE")
+
+    def moderate_comment(self, comment_id36: str, **kwargs):
+        """Moderate a comment, setting its removed status.
+
+        Arguments:
+        comment_id36 -- The id36 of the comment to act on.
+
+        Keyword Arguments:
+        remove -- Boolean, remove/unremove comment."""
         if "remove" in kwargs:
             if kwargs["remove"]:
                 self._ic_req(f"/api/web/comments/{comment_id36}/remove", "PUT")
