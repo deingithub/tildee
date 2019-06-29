@@ -142,7 +142,7 @@ class TildesClient:
         """
         if isinstance(tags, list):
             # Stringify list and remove braces
-            tags = str(tags)[1:-1]
+            tags = str(tags)[1:-1].replace("\'", "")
         r = self._post(f"/~{group}/topics", title=title, tags=tags, **kwargs)
         return r.url.split("/")[-2]
 
@@ -203,7 +203,7 @@ class TildesClient:
         if "tags" in kwargs:
             if isinstance(kwargs["tags"], list):
                 # Stringify list and remove braces
-                kwargs["tags"] = str(kwargs["tags"])[1:-1]
+                kwargs["tags"] = str(kwargs["tags"])[1:-1].replace("\'", "")
             self._ic_req(
                 f"/api/web/topics/{topic_id36}/tags", "PUT", tags=kwargs["tags"]
             )
