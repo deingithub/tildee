@@ -113,6 +113,7 @@ class TildesNotification:
 
 class TildesNotificationKind(Enum):
     """Enum representing the possible kinds of notification."""
+
     UNKNOWN = auto()
     MENTION = auto()
     TOPIC_REPLY = auto()

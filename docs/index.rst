@@ -13,6 +13,8 @@ Currently Tildee can parse posts and their comments, create comments, topics and
 Missing features
 ----------------
 
+See the `relevant label on the issue tracker <https://git.dingenskirchen.systems/Dingens/tildee.py/issues?labels=15>`_.
+
 Development
 -----------
 

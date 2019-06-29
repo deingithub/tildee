@@ -10,7 +10,7 @@ All methods of the ``TildesClient`` raise if any exception occurs, including uns
 Logging in
 ----------
 
-You can connect to Tildes and log in by creating a new ``TildesClient`` instance and passing the login data to the constructor. If you're not connecting to tildes.net, override the ``base_url`` argument. If you're connecting to a local development instance, which use self-signed SSL certificates, also pass ``verify_ssl = False`` to avoid errors.
+You can connect to Tildes and log in by creating a new ``TildesClient`` instance and passing the login data to the constructor. If you're not connecting to tildes.net, override the ``base_url`` argument. If you're connecting to a local development instance, which uses self-signed SSL certificates, also pass ``verify_ssl = False`` to avoid errors.
 
 .. autoclass:: tildee.TildesClient
 
