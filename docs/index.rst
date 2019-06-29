@@ -8,7 +8,8 @@ Welcome to tildee's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   client
+   models
 
 This is tildee.py, a Python 3 library for interacting with the https://tildes.net API. Note that this API is not stable and not actually intended for external use, so this could break at any moment.
 
@@ -22,7 +23,7 @@ Currently tildee.py can parse posts and their comments, create comments, topics 
 Development
 ----------
 
-To install dependencies, run ``poetry install``. You can run a python shell in the environment using ``poetry run python`` (I'd recommend using ``ipython``, too). Format your code before committing by running ```black .```.
+To install dependencies, run ``poetry install``. You can run a python shell in the environment using ``poetry run python`` (I'd recommend using ``ipython``, too). Format your code before committing by running ``black .``.
 
 License
 -------
