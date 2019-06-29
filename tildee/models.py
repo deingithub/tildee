@@ -1,5 +1,6 @@
 from lxml import html, etree
 from enum import Enum, auto
+import re
 
 
 class TildesTopic:
@@ -29,6 +30,10 @@ class TildesTopic:
 
         self.author = self._tree.cssselect("a.link-user")[0].text
         self.timestamp = self._tree.cssselect("time")[0].attrib["datetime"]
+        try:
+            self.num_votes = int(self._tree.cssselect("span.topic-voting-votes")[0].text)
+        except IndexError:
+            self.num_votes = 0
 
         comments = self._tree.cssselect("ol#comments > li > article")
         self.comments = []
@@ -51,6 +56,13 @@ class TildesComment:
         self.content_html = str(
             etree.tostring(self._tree.cssselect("div.comment-text")[0])
         )
+        vote_btn_text = "0"
+        try:
+            vote_btn_text = self._tree.cssselect("button[name='vote'], div.comment-votes")[0].text
+            self.num_votes = int(re.findall("[0-9]+", vote_btn_text)[0])
+        except IndexError:
+            self.num_votes = 0
+
         self.children = []
         comments = self._tree.cssselect("ol.comment-tree-replies > li > article")
         for comment in comments:
