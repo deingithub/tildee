@@ -1,4 +1,7 @@
-Documentation for the model classes here. Somewhere.
+Model Classes
+=============
+
+These are all representations of "things" on Tildes, created from HTML from the site and provide easy access to the interesting parts of that HTML.
 
 .. autoclass:: tildee.TildesTopic
    :members:
@@ -8,6 +11,10 @@ Documentation for the model classes here. Somewhere.
 
 .. autoclass:: tildee.TildesNotification
 	 :members:
+
+.. autoclass:: tildee.TildesNotificationKind
+	 :members:
+	 :undoc-members:
 
 .. autoclass:: tildee.TildesConversation
 	 :members:

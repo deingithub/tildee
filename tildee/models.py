@@ -4,7 +4,16 @@ import re
 
 
 class TildesTopic:
-    """Represents a single topic on Tildes."""
+    """Represents a single topic on Tildes, generated from the entire page.
+
+    :ivar List[str] tags: List of tags this topic has.
+    :ivar str title: The title of this topic.
+    :ivar Optional[str] content_html: The text of this topic as rendered by the site.
+    :ivar Optional[str] link: The link of this topic.
+    :ivar str author: The topic author's username.
+    :ivar str timestamp: The topic's creation timestamp.
+    :ivar int num_votes: The amount of votes this topic has received.
+    :ivar List[TildesComment] comments: Top level comments in this topic."""
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
@@ -44,7 +53,14 @@ class TildesTopic:
 
 
 class TildesComment:
-    """Represents a single comment on Tildes."""
+    """Represents a single comment on Tildes, generated from its surrounding ``<article>`` tag.
+
+        :ivar str id36: The id36 of this comment.
+        :ivar str content_html: This comment's content as rendered by the site.
+        :ivar str author: The comment author's username.
+        :ivar str timestamp: The comment's creation timestamp.
+        :ivar int num_votes: The amount of votes this comment has received.
+        :ivar List[TildesComment] children: Top level replies to this comment."""
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
@@ -74,7 +90,10 @@ class TildesComment:
 
 
 class TildesNotification:
-    """Represents a single notification on Tildes."""
+    """Represents a single notification on Tildes, generated from its surrounding ``<li>`` tag.
+
+    :ivar str subject: The id36 of the comment that triggered the notification.
+    :ivar TildesNotificationKind kind: The kind of notification."""
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
@@ -93,6 +112,7 @@ class TildesNotification:
 
 
 class TildesNotificationKind(Enum):
+    """Enum representing the possible kinds of notification."""
     UNKNOWN = auto()
     MENTION = auto()
     TOPIC_REPLY = auto()
@@ -100,7 +120,10 @@ class TildesNotificationKind(Enum):
 
 
 class TildesConversation:
-    """Represents a conversation on Tildes."""
+    """Represents a conversation on Tildes, generated from the entire page.
+
+    :ivar str title: The Subject of this conversation.
+    :ivar List[TildesMessage] entries: The messages in this conversation in order."""
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
@@ -111,7 +134,11 @@ class TildesConversation:
 
 
 class TildesMessage:
-    """Represents a message in a conversation on Tildes."""
+    """Represents a message in a conversation on Tildes, generated from its surrounding ``<article>`` tag.
+
+    :ivar str author: The message author's username.
+    :ivar str timestamp: The message's creation timestamp.
+    :ivar str content_html: The message's content as rendered by the site."""
 
     def __init__(self, text):
         self._tree = html.fromstring(text)

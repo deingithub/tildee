@@ -3,17 +3,18 @@ __version__ = "0.2.1"
 import requests
 from requests import Response
 from lxml import html, etree
-from tildee.models import (
-    TildesTopic,
-    TildesComment,
-    TildesNotification,
-    TildesConversation,
-)
+from tildee.models import *
 from typing import Union, List, Optional
 
 
 class TildesClient:
-    """A client for the (unstable) Tildes API."""
+    """Initializes client and logs in.
+
+    :param username: The username to log in with.
+    :param password: The password to log in with.
+    :param base_url: The site to log in to.
+    :param verify_ssl: Whether to check SSL certificate validity.
+    """
 
     def __init__(
         self,
@@ -22,15 +23,6 @@ class TildesClient:
         base_url: str = "https://tildes.net",
         verify_ssl: bool = True,
     ):
-        """Initializes client and logs in.
-
-        Doesn't yet support 2FA.
-        Arguments:
-        username -- The username to log in with.
-        password -- The password to log in with.
-        base_url -- The site to log in to. Default: https://tildes.net
-        verify_ssl -- Wether to check SSL cert validity. Default: True.
-        """
         self.username = username
         self.base_url = base_url
         self._headers = {
@@ -131,14 +123,13 @@ class TildesClient:
     ) -> str:
         """Post a topic into a group, returns new topic's id36.
 
-        Arguments:
-        group -- The group to post in, without a ~ in front.
-        title -- The topic's title.
-        tags -- Comma separated string or list of tags.
-
-        Keyword Arguments:
-        markdown -- The topic's content as markdown.
-        link -- The topic's link.
+        :param group: The group to post in, without a ~ in front.
+        :param title: The topic's title.
+        :param tags: Comma separated string or list of tags.
+        :keyword markdown: The topic's content as markdown.
+        :keyword link: The topic's link.
+        :rtype: str
+        :return: New topic's id36.
         """
         if isinstance(tags, list):
             # Stringify list and remove braces
@@ -151,10 +142,11 @@ class TildesClient:
     ) -> str:
         """Post a comment, returns new comment's id36.
 
-        Arguments:
-        markdown -- The comment's content as markdown.
-        parent_id36 -- The parent entity's id36. Can be a topic or comment.
-        top_level -- Set this to False if the comment's a reply to another comment."""
+        :param markdown: The comment's content as markdown.
+        :param parent_id36: The parent entity's id36. Can be a topic or comment.
+        :param top_level: Set this to False if the comment's a reply to another comment.
+        :rtype: str
+        :return: The new comment's id36."""
         r = None
         if top_level:
             r = self._ic_req(
@@ -170,8 +162,7 @@ class TildesClient:
     def fetch_topic(self, topic_id36: str) -> TildesTopic:
         """Fetches, parses and returns a topic as an object for further processing.
 
-        Arguments:
-        topic_id36 -- The id36 of the topic to fetch."""
+        :param topic_id36: The id36 of the topic to fetch."""
         r = self._get(f"/~group_name_here/{topic_id36}")
         return TildesTopic(r.text)
 
@@ -180,8 +171,7 @@ class TildesClient:
 
         This endpoint doesn't include a comments' children.
 
-        Arguments:
-        comment_id36 -- The id36 of the comment to fetch."""
+        :param comment_id36: The id36 of the comment to fetch."""
         r = self._ic_get(f"/api/web/comments/{comment_id36}")
         fake_article = f'<article class="comment" data-comment-id36="{comment_id36}">{r.text}</article>'
         return TildesComment(fake_article)
@@ -189,17 +179,15 @@ class TildesClient:
     def edit_topic(self, topic_id36: str, **kwargs):
         """Interact with a topic in nearly any way possible; permission limits still apply, obviously.
 
-        Arguments:
-        topic_id36 -- The id36 of the topic to act on.
+        :param topic_id36: The id36 of the topic to act on.
 
-        Keyword arguments:
-        tags -- Comma separated string or list of tags.
-        group -- The new group for the topic, without ~ in front.
-        title -- The new title for the topic.
-        link -- The new link for the topic.
-        content -- The new markdown for the topic.
-        vote -- Boolean, vote/unvote this topic.
-        bookmark -- Boolean, bookmark/unbookmark this topic."""
+        :kwarg tags: Comma separated string or list of tags.
+        :kwarg group: The new group for the topic, without ~ in front.
+        :kwarg title: The new title for the topic.
+        :kwarg link: The new link for the topic.
+        :kwarg content: The new markdown for the topic. Account must be topic author.
+        :kwarg vote: Boolean, vote/unvote this topic.
+        :kwarg bookmark: Boolean, bookmark/unbookmark this topic."""
         if "tags" in kwargs:
             if isinstance(kwargs["tags"], list):
                 # Stringify list and remove braces
@@ -244,21 +232,18 @@ class TildesClient:
                 self._ic_req(f"/api/web/topics/{topic_id36}/bookmark", "DELETE")
 
     def delete_topic(self, topic_id36: str):
-        """Delete a topic.
+        """Delete a topic. Account must be topic author.
 
-        Arguments:
-        topic_id36 -- The id36 of the topic to delete."""
+        :param topic_id36: The id36 of the topic to delete."""
         self._ic_req(f"/api/web/topics/{topic_id36}", "DELETE")
 
     def moderate_topic(self, topic_id36: str, **kwargs):
-        """Moderate a topic, setting its locked/removed status.
+        """Moderate a topic, setting its locked/removed status. Account must be admin.
 
-        Arguments:
-        topic_id36 -- The id36 of the topic to act on.
+        :param topic_id36: The id36 of the topic to act on.
 
-        Keyword Arguments:
-        lock -- Boolean, lock/unlock comments.
-        remove -- Boolean, remove/unremove this topic."""
+        :kwarg lock: Boolean, lock/unlock comments.
+        :kwarg remove: Boolean, remove/unremove this topic."""
         if "lock" in kwargs:
             if kwargs["lock"]:
                 self._ic_req(f"/api/web/topics/{topic_id36}/lock", "PUT")
@@ -273,13 +258,11 @@ class TildesClient:
     def edit_comment(self, comment_id36: str, **kwargs):
         """Interact with a comment in nearly any way possible; permission limits still apply, obviously.
 
-        Arguments:
-        comment_id36 -- The id36 of the comment to act on.
+        :param comment_id36: The id36 of the comment to act on.
 
-        Keyword Arguments:
-        content -- The new markdown for the comment.
-        vote -- Boolean, vote/unvote this comment.
-        bookmark -- Boolean, bookmark/unbookmark this comment.
+        :kwarg content: The new markdown for the comment. Account must be comment author.
+        :kwarg vote: Boolean, vote/unvote this comment.
+        :kwarg bookmark: Boolean, bookmark/unbookmark this comment.
         """
         if "content" in kwargs:
             self._ic_req(
@@ -297,20 +280,17 @@ class TildesClient:
                 self._ic_req(f"/api/web/comments/{comment_id36}/bookmark", "DELETE")
 
     def delete_comment(self, comment_id36: str):
-        """Delete a comment.
+        """Delete a comment. Account must be comment author.
 
-        Arguments:
-        comment_id36 -- The id36 of the comment to delete."""
+        :param comment_id36: The id36 of the comment to delete."""
         self._ic_req(f"/api/web/comments/{comment_id36}", "DELETE")
 
     def moderate_comment(self, comment_id36: str, **kwargs):
-        """Moderate a comment, setting its removed status.
+        """Moderate a comment, setting its removed status. Account must be admin.
 
-        Arguments:
-        comment_id36 -- The id36 of the comment to act on.
+        :param comment_id36: The id36 of the comment to act on.
 
-        Keyword Arguments:
-        remove -- Boolean, remove/unremove comment."""
+        :kwarg remove: Boolean, remove/unremove comment."""
         if "remove" in kwargs:
             if kwargs["remove"]:
                 self._ic_req(f"/api/web/comments/{comment_id36}/remove", "PUT")
@@ -330,8 +310,7 @@ class TildesClient:
     def mark_notification_as_read(self, subject_id36: str):
         """Marks a notification as read.
 
-        Arguments:
-        subject_id36 -- The notification subject's id36 to mark."""
+        :param subject_id36: The notification subject's id36 to mark."""
         self._ic_req(f"/api/web/comments/{subject_id36}/mark_read", "PUT")
 
     def fetch_unread_message_ids(self) -> List[str]:
@@ -348,17 +327,15 @@ class TildesClient:
     def fetch_conversation(self, convo_id36: str) -> TildesConversation:
         """Fetches, parses and returns a conversation as TildesConversation object for further processing.
 
-        Arguments:
-        convo_id36 -- The target conversation's id36."""
+        :param convo_id36: The target conversation's id36."""
         r = self._get(f"/messages/conversations/{convo_id36}")
         return TildesConversation(r.text)
 
     def create_message(self, convo_id36: str, markdown: str):
         """Creates a message in an existing conversation.
 
-        Arguments:
-        convo_id36 -- The target conversation's id36.
-        markdown -- The message's content as markdown."""
+        :param convo_id36: The target conversation's id36.
+        :param markdown: The message's content as markdown."""
         self._ic_req(
             f"/api/web/messages/conversations/{convo_id36}/replies", markdown=markdown
         )
@@ -366,8 +343,7 @@ class TildesClient:
     def create_conversation(self, username: str, subject: str, markdown: str):
         """Creates a new conversation with a user.
 
-        Arguments:
-        username -- The username of the recipient.
-        subject -- The conversation's subject.
-        markdown -- The first message's content as markdown."""
+        :param username: The username of the recipient.
+        :param subject: The conversation's subject.
+        :param markdown: The first message's content as markdown."""
         self._ic_req(f"/user/{username}/messages", subject=subject, markdown=markdown)
