@@ -13,6 +13,7 @@ class TildesTopic:
     :ivar str author: The topic author's username.
     :ivar str timestamp: The topic's creation timestamp.
     :ivar int num_votes: The amount of votes this topic has received.
+    :ivar List[TildesTopicLogEntry] log: The associated topic log in chronological order.
     :ivar List[TildesComment] comments: Top level comments in this topic."""
 
     def __init__(self, text):
@@ -45,6 +46,12 @@ class TildesTopic:
             )
         except IndexError:
             self.num_votes = 0
+
+        log_entries = self._tree.cssselect("ol.topic-log-listing > li")
+        self.log = []
+        for log_entry in log_entries:
+            self.log.append(TildesTopicLogEntry(etree.tostring(log_entry)))
+        self.log.reverse()
 
         comments = self._tree.cssselect("ol#comments > li > article")
         self.comments = []
@@ -101,11 +108,11 @@ class TildesNotification:
             "data-comment-id36"
         ]
         notification_heading = self._tree.cssselect("h2.heading-notification")[0].text
-        if "You were mentioned in a comment" in notification_heading:
+        if notification_heading.startswith("You were mentioned in a comment"):
             self.kind = TildesNotificationKind.MENTION
-        elif "Reply to your topic" in notification_heading:
+        elif notification_heading.startswith("Reply to your topic"):
             self.kind = TildesNotificationKind.TOPIC_REPLY
-        elif "Reply to your comment" in notification_heading:
+        elif notification_heading.startswith("Reply to your comment"):
             self.kind = TildesNotificationKind.COMMENT_REPLY
         else:
             self.kind = TildesNotificationKind.UNKNOWN
@@ -150,3 +157,116 @@ class TildesMessage:
         self.content_html = str(
             etree.tostring(self._tree.cssselect("div.message-text")[0])
         )
+
+
+class TildesTopicLogEntry:
+    """Represents a single entry from a topic's log, generated from its surrounding ``<li>`` tag.
+
+    :ivar str user: The responsible curator's username.
+    :ivar str timestamp: The entry's timestamp.
+    :ivar TildesTopicLogEntryKind kind: The kind of log entry.
+    :ivar Optional[Dict] data: The data associated with this log entry. See `below <#tildee.TildesTopicLogEntryKind>`_ for structure."""
+
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+        self.user = self._tree.cssselect("a.link-user")[0].text
+        self.timestamp = self._tree.cssselect("span.topic-log-entry-time time")[
+            0
+        ].attrib["datetime"]
+        edit_str = self._tree.cssselect("a.link-user")[0].tail.strip()
+        print(f"Input: {edit_str}")
+        self.kind = TildesTopicLogEntryKind.UNKNOWN
+        self.data = None
+        if edit_str.startswith("added tag") or edit_str.startswith("removed tag"):
+            self.kind = TildesTopicLogEntryKind.TAG_EDIT
+            added_str = ""
+            removed_str = ""
+            added_tags = []
+            removed_tags = []
+            if "added tag '" in edit_str:
+                # One added tag, find the phrase and extract the tag itself
+                match = re.match("added tag '([a-z0-9. ]+)'", edit_str)
+                added_tags = [match.group(1)]
+            elif "added tags '" in edit_str:
+                # Multiple tags, get the point where the removed tags part begins
+                cutoff = edit_str.find("' and removed tag")
+                if cutoff == -1:
+                    # If we don't have a removed part, set the cutoff to the length of the input
+                    cutoff = len(edit_str) - 1
+                # Search for all tags in the input string within the cutoff
+                # We add one to `cutoff` to include the final tag's closing _'_
+                find_str = edit_str[:cutoff + 1]
+                added_tags = re.findall("'([a-z0-9. ]+)'", find_str)
+            if "removed tag '" in edit_str:
+                # One removed tag, find the phrase and extract the tag itself
+                # Can't use match — might not be start of string
+                match = re.search("removed tag '([a-z0-9. ]+)'", edit_str)
+                removed_tags = [match.group(1)]
+            elif "removed tags '" in edit_str:
+                # Multiple removed tags, find our start point and search from there
+                start_point = edit_str.find("' and removed tag")
+                # Add one to start_point to either exclude the final added tag's
+                # closing _'_ or start from index 0
+                find_str = edit_str[start_point+1:]
+                removed_tags = re.findall("'([a-z0-9. ]+)'", find_str)
+            self.data = {"added": added_tags, "removed": removed_tags}
+        elif edit_str.startswith("changed link"):
+            self.kind = TildesTopicLogEntryKind.LINK_EDIT
+            match = re.match("changed link from (\\S+) to (\\S+)", edit_str)
+            self.data = {"old": match.group(1), "new": match.group(2)}
+        elif edit_str.startswith("changed title"):
+            self.kind = TildesTopicLogEntryKind.TITLE_EDIT
+            # BUG: If the string contains more than one _" to "_ sequence, i.e.
+            # in any of the titles, this will not work correctly.
+            # In that case we'll set a flag ("certain") to notify the user.
+            certain = False
+            if edit_str.count("\" to \"") == 1:
+                certain = True
+            match = re.match("changed title from \\\"([\\S ]+)\\\" to \\\"([\\S ]+)\\\"", edit_str)
+            self.data = {"old": match.group(1), "new": match.group(2), "certain": certain}
+        elif edit_str.startswith("unlocked comments"):
+            self.kind = TildesTopicLogEntryKind.UNLOCK
+        elif edit_str.startswith("locked comments"):
+            self.kind = TildesTopicLogEntryKind.LOCK
+        elif edit_str.startswith("un-removed"):
+            self.kind = TildesTopicLogEntryKind.UNREMOVE
+        elif edit_str.startswith("removed"):
+            self.kind = TildesTopicLogEntryKind.REMOVE
+        elif edit_str.startswith("moved"):
+            self.kind = TildesTopicLogEntryKind.MOVE
+            match = re.match("moved from ~(\\S+) to ~(\\S+)", edit_str)
+            self.data = {"old": match.group(1), "new": match.group(2)}
+
+        print(f"Result: {str(self.kind)[24:]} {self.data}")
+
+
+class TildesTopicLogEntryKind(Enum):
+    """Enum representing the possible kinds of topic log entry. Documentation includes structure for ``TildesTopicLogEntry``'s data attribute."""
+
+    #: | Default option if the entry is unrecognized, no data.
+    #: | data: ``None``
+    UNKNOWN = auto()
+    #: | Tag edit, data contains added and removed tags.
+    #: | data: ``{"added": List[str], "removed": List[str]}``
+    TAG_EDIT = auto()
+    #: | Title edit, data contains old and new title. If the program can't decide what is part of the titles and what isn't, ``certain`` will be set to ``False``.
+    #: | data: ``{"old": str, "new": str, "certain": bool}``
+    TITLE_EDIT = auto()
+    #: | Link edit, data contains old and new link.
+    #: | data: ``{"old": str, "new": str}``
+    LINK_EDIT = auto()
+    #: | Group move, data contains old and new group path.
+    #: | data: ``{"old": str, "new": str}``
+    MOVE = auto()
+    #: | Comments locked, no data.
+    #: | data: ``None``
+    LOCK = auto()
+    #: | Comments unlocked, no data.
+    #: | data: ``None``
+    UNLOCK = auto()
+    #: | Topic removed, no data.
+    #: | data: ``None``
+    REMOVE = auto()
+    #: | Topic unremoved, no data.
+    #: | data: ``None``
+    UNREMOVE = auto()

@@ -9,6 +9,12 @@ These are all representations of "things" on Tildes, created from HTML from the 
 .. autoclass:: tildee.TildesComment
    :members:
 
+.. autoclass:: tildee.TildesTopicLogEntry
+   :members:
+
+.. autoclass:: tildee.TildesTopicLogEntryKind
+   :members:
+
 .. autoclass:: tildee.TildesNotification
 	 :members:
 
