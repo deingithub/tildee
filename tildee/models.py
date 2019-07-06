@@ -14,6 +14,7 @@ class TildesTopic:
     :ivar str author: The topic author's username.
     :ivar str timestamp: The topic's creation timestamp.
     :ivar int num_votes: The amount of votes this topic has received.
+    :ivar int num_comments: The amount of comments on this topic.
     :ivar List[TildesTopicLogEntry] log: The associated topic log in chronological order.
     :ivar List[TildesComment] comments: Top level comments in this topic."""
 
@@ -49,6 +50,10 @@ class TildesTopic:
             )
         except IndexError:
             self.num_votes = 0
+
+        self.num_comments = self._tree.cssselect("header.topic-comments-header > h2")[
+            0
+        ].text.split(" ")[0]
 
         log_entries = self._tree.cssselect("ol.topic-log-listing > li")
         self.log = []
