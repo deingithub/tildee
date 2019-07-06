@@ -1,5 +1,6 @@
 from tildee.models import *
 
+
 def test_topic_log_parser_links():
     input = """<li class="topic-log-entry">
               <a href="/user/TestUser" class="link-user">TestUser</a>
@@ -10,6 +11,7 @@ def test_topic_log_parser_links():
     assert output.kind == TildesTopicLogEntryKind.LINK_EDIT
     assert output.data["old"] == "https://example.com"
     assert output.data["new"] == "https://example.com/a"
+
 
 def test_topic_log_parser_titles_safe():
     input = """<li class="topic-log-entry">
@@ -22,6 +24,7 @@ def test_topic_log_parser_titles_safe():
     assert output.data["certain"] == True
     assert output.data["old"] == "More tests? Yes."
     assert output.data["new"] == "More tests? Yes. No."
+
 
 def test_topic_log_parser_titles_unsafe():
     input = """<li class="topic-log-entry">

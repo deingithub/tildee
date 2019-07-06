@@ -177,13 +177,10 @@ class TildesTopicLogEntry:
             0
         ].attrib["datetime"]
         edit_str = self._tree.cssselect("a.link-user")[0].tail.strip()
-        print(f"Input: {edit_str}")
         self.kind = TildesTopicLogEntryKind.UNKNOWN
         self.data = None
         if edit_str.startswith("added tag") or edit_str.startswith("removed tag"):
             self.kind = TildesTopicLogEntryKind.TAG_EDIT
-            added_str = ""
-            removed_str = ""
             added_tags = []
             removed_tags = []
             if "added tag '" in edit_str:
@@ -245,8 +242,6 @@ class TildesTopicLogEntry:
             self.kind = TildesTopicLogEntryKind.MOVE
             match = re.match("moved from ~(\\S+) to ~(\\S+)", edit_str)
             self.data = {"old": match.group(1), "new": match.group(2)}
-
-        print(f"Result: {str(self.kind)[24:]} {self.data}")
 
 
 class TildesTopicLogEntryKind(Enum):

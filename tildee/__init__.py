@@ -3,7 +3,12 @@ __version__ = "0.2.3"
 import requests
 from requests import Response
 from lxml import html, etree
-from tildee.models import *
+from tildee.models import (
+    TildesTopic,
+    TildesComment,
+    TildesNotification,
+    TildesConversation,
+)
 from typing import Union, List, Optional
 
 
