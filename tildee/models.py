@@ -7,6 +7,7 @@ class TildesTopic:
     """Represents a single topic on Tildes, generated from the entire page.
 
     :ivar List[str] tags: List of tags this topic has.
+    :ivar str group: The group this topic was posted in.
     :ivar str title: The title of this topic.
     :ivar Optional[str] content_html: The text of this topic as rendered by the site.
     :ivar Optional[str] link: The link of this topic.
@@ -18,6 +19,8 @@ class TildesTopic:
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
+
+        self.group = self._tree.cssselect("a.site-header-context")[0].text[1:]
 
         self.tags = []
         for element in self._tree.cssselect("ul.topic-tags > li > a"):
@@ -195,7 +198,7 @@ class TildesTopicLogEntry:
                     cutoff = len(edit_str) - 1
                 # Search for all tags in the input string within the cutoff
                 # We add one to `cutoff` to include the final tag's closing _'_
-                find_str = edit_str[:cutoff + 1]
+                find_str = edit_str[: cutoff + 1]
                 added_tags = re.findall("'([a-z0-9. ]+)'", find_str)
             if "removed tag '" in edit_str:
                 # One removed tag, find the phrase and extract the tag itself
@@ -207,7 +210,7 @@ class TildesTopicLogEntry:
                 start_point = edit_str.find("' and removed tag")
                 # Add one to start_point to either exclude the final added tag's
                 # closing _'_ or start from index 0
-                find_str = edit_str[start_point+1:]
+                find_str = edit_str[start_point + 1 :]
                 removed_tags = re.findall("'([a-z0-9. ]+)'", find_str)
             self.data = {"added": added_tags, "removed": removed_tags}
         elif edit_str.startswith("changed link"):
@@ -220,10 +223,16 @@ class TildesTopicLogEntry:
             # in any of the titles, this will not work correctly.
             # In that case we'll set a flag ("certain") to notify the user.
             certain = False
-            if edit_str.count("\" to \"") == 1:
+            if edit_str.count('" to "') == 1:
                 certain = True
-            match = re.match("changed title from \\\"([\\S ]+)\\\" to \\\"([\\S ]+)\\\"", edit_str)
-            self.data = {"old": match.group(1), "new": match.group(2), "certain": certain}
+            match = re.match(
+                'changed title from \\"([\\S ]+)\\" to \\"([\\S ]+)\\"', edit_str
+            )
+            self.data = {
+                "old": match.group(1),
+                "new": match.group(2),
+                "certain": certain,
+            }
         elif edit_str.startswith("unlocked comments"):
             self.kind = TildesTopicLogEntryKind.UNLOCK
         elif edit_str.startswith("locked comments"):
