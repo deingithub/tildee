@@ -9,6 +9,7 @@ class TildesTopic:
     :ivar List[str] tags: List of tags this topic has.
     :ivar str group: The group this topic was posted in.
     :ivar str title: The title of this topic.
+    :ivar TildesAccessStatus status: Status of this comment. If ``DELETED`` or ``REMOVED``, ``content_html``, ``link``, ``author``, ``timestamp``, ``comments``, ``log``, ``num_votes`` and ``num_comments`` are unavailable.
     :ivar Optional[str] content_html: The text of this topic as rendered by the site.
     :ivar Optional[str] link: The link of this topic.
     :ivar str author: The topic author's username.
@@ -41,6 +42,25 @@ class TildesTopic:
             ]
         except IndexError:
             self.link = None
+
+        if self._tree.cssselect("article.topic-full > .text-error"):
+            error = self._tree.cssselect("article.topic-full > .text-error")[0]
+            if "removed by site admin" in error.text:
+                self.status = TildesAccessStatus.REMOVED
+                self.author, self.timestamp = "", ""
+                self.comments, self.log = [], []
+                self.num_votes, self.num_comments = 0, 0
+                return
+            elif "deleted by author" in error.text:
+                self.status = TildesAccessStatus.DELETED
+                self.author, self.timestamp = "", ""
+                self.comments, self.log = [], []
+                self.num_votes, self.num_comments = 0, 0
+                return
+            else:
+                raise (
+                    RuntimeError(f'Unknown topic ({self.id36}) status: "{error.text}"')
+                )
 
         self.author = self._tree.cssselect("a.link-user")[0].text
         self.timestamp = self._tree.cssselect("time")[0].attrib["datetime"]
@@ -123,6 +143,7 @@ class TildesComment:
     """Represents a single comment on Tildes, generated from its surrounding ``<article>`` tag.
 
         :ivar str id36: The id36 of this comment.
+        :ivar TildesAccessStatus status: Status of this comment. If ``DELETED`` or ``REMOVED``, no data beyond ``id36`` are available.
         :ivar str content_html: This comment's content as rendered by the site.
         :ivar str author: The comment author's username.
         :ivar str timestamp: The comment's creation timestamp.
@@ -134,6 +155,23 @@ class TildesComment:
         self.id36 = self._tree.cssselect("article.comment")[0].attrib[
             "data-comment-id36"
         ]
+
+        self.children = []
+        comments = self._tree.cssselect("ol.comment-tree-replies > li > article")
+        for comment in comments:
+            self.children.append(TildesComment(etree.tostring(comment)))
+
+        self.status = TildesAccessStatus.FULL
+        if self._tree.cssselect("div.is-comment-removed"):
+            self.status = TildesAccessStatus.REMOVED
+            self.author, self.timestamp, self.content_html = "", "", ""
+            self.num_votes = 0
+            return
+        elif self._tree.cssselect("div.is-comment-deleted"):
+            self.status = TildesAccessStatus.DELETED
+            self.author, self.timestamp, self.content_html = "", "", ""
+            self.num_votes = 0
+            return
         self.author = self._tree.cssselect("a.link-user")[0].text
         self.timestamp = self._tree.cssselect("time.comment-posted-time")[0].attrib[
             "datetime"
@@ -149,11 +187,6 @@ class TildesComment:
             self.num_votes = int(re.findall("[0-9]+", vote_btn_text)[0])
         except IndexError:
             self.num_votes = 0
-
-        self.children = []
-        comments = self._tree.cssselect("ol.comment-tree-replies > li > article")
-        for comment in comments:
-            self.children.append(TildesComment(etree.tostring(comment)))
 
 
 class TildesNotification:
@@ -185,6 +218,17 @@ class TildesNotificationKind(Enum):
     MENTION = auto()
     TOPIC_REPLY = auto()
     COMMENT_REPLY = auto()
+
+
+class TildesAccessStatus(Enum):
+    """Enum representing the possible visibility statuses of comments or topics."""
+
+    #: Full content is available.
+    FULL = auto()
+    #: Comment/Topic removed by site admin, only reduced data available.
+    REMOVED = auto()
+    #: Comment/Topic deleted by its author, only reduced data available.
+    DELETED = auto()
 
 
 class TildesConversation:

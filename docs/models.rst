@@ -18,6 +18,9 @@ These are all representations of "things" on Tildes, created from HTML from the 
 .. autoclass:: tildee.models.TildesTopicLogEntryKind
    :members:
 
+.. autoclass:: tildee.models.TildesAccessStatus
+   :members:
+
 .. autoclass:: tildee.models.TildesNotification
 	 :members:
 
