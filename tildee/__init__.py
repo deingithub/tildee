@@ -26,6 +26,7 @@ class TildesClient:
         self,
         username: str,
         password: str,
+        totp_code: Optional[str] = None,
         base_url: str = "https://tildes.net",
         verify_ssl: bool = True,
     ):
@@ -36,12 +37,12 @@ class TildesClient:
             "User-Agent": f"tildee.py Client [as {self.username}]",
         }
         self._verify_ssl = verify_ssl
-        self._login(password)
+        self._login(password, totp_code)
 
     def __del__(self):
         self._logout()
 
-    def _login(self, password: str):
+    def _login(self, password: str, totp_code: Optional[str] = None):
         login_page = requests.get(
             self.base_url + "/login", headers=self._headers, verify=self._verify_ssl
         )
@@ -63,6 +64,19 @@ class TildesClient:
         )
         login_request.raise_for_status()
         self._cookies = login_page.cookies
+
+        if not "<!DOCTYPE html>" in login_request.text:
+            if totp_code:
+                totp_request = requests.post(
+                    self.base_url + "/login_two_factor",
+                    data={"csrf_token": self._csrf_token, "code": totp_code},
+                    cookies=login_page.cookies,
+                    headers=self._headers,
+                    verify=self._verify_ssl,
+                )
+                totp_request.raise_for_status()
+            else:
+                raise (RuntimeError("Missing 2FA code."))
 
     def _logout(self):
         self._post("/logout")
