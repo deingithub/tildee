@@ -67,6 +67,58 @@ class TildesTopic:
             self.comments.append(TildesComment(etree.tostring(comment)))
 
 
+class TildesPartialTopic:
+    """Represents a topic on Tildes as fetched from the topic listings, generated from its surrounding ``<article>`` tag. Has only reduced information available.
+
+    :ivar str id36: The topic's id36.
+    :ivar str title: The topic's title.
+    :ivar Optional[str] group: The topic's group, if provided in the listing.
+    :ivar str author: The topic's author.
+    :ivar Optional[str] link: The topic's link, if available.
+    :ivar Optional[str] content_html: The text of this topic as rendered by the site, if available.
+    :ivar int num_votes: The amount of votes this topic has received.
+    :ivar int num_comments: The amount of comments on this topic.
+    :ivar List[str] tags: The tags on this topics.
+    :ivar str timestamp: The topic's timestamp."""
+
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+        self.id36 = self._tree.cssselect("article")[0].attrib["id"].split("-")[1]
+        self.title = self._tree.cssselect("h1.topic-title > a")[0].text
+        self.group = None
+        try:
+            self.group = self._tree.cssselect(".topic-group > a")[0].text[1:]
+        except IndexError:
+            pass
+
+        self.author = self._tree.cssselect("article")[0].attrib["data-topic-posted-by"]
+        self.link = None
+        self.content_html = None
+        if not self._tree.cssselect("header h1 > a")[0].attrib["href"].startswith("/"):
+            self.link = self._tree.cssselect("header h1 > a")[0].attrib["href"]
+        elif self._tree.cssselect(".topic-text-excerpt"):
+            tree = self._tree.cssselect(".topic-text-excerpt")[0]
+            etree.strip_elements(tree, "summary")
+            self.content_html = str(etree.tostring(tree))
+        try:
+            self.num_votes = int(
+                self._tree.cssselect("span.topic-voting-votes")[0].text
+            )
+        except IndexError:
+            self.num_votes = 0
+        self.num_comments = int(
+            re.findall(
+                "[0-9]+", self._tree.cssselect(".topic-info-comments > a")[0].text
+            )[0]
+        )
+
+        self.tags = []
+        for element in self._tree.cssselect("ul.topic-tags > li > a"):
+            self.tags.append(element.text)
+
+        self.timestamp = self._tree.cssselect("time")[0].attrib["datetime"]
+
+
 class TildesComment:
     """Represents a single comment on Tildes, generated from its surrounding ``<article>`` tag.
 

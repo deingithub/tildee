@@ -2,3 +2,4 @@ __pycache__/
 tildee.egg-info/
 dist/
 docs/_build
+docs/.mypy_cache

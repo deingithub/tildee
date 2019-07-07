@@ -8,6 +8,7 @@ from tildee.models import (
     TildesComment,
     TildesNotification,
     TildesConversation,
+    TildesPartialTopic,
 )
 from typing import Union, List, Optional
 
@@ -173,6 +174,72 @@ class TildesClient:
         :return: The requested topic."""
         r = self._get(f"/~group_name_here/{topic_id36}")
         return TildesTopic(r.text)
+
+    def fetch_topic_listing(self, path: str) -> List[TildesPartialTopic]:
+        """Fetches, parses and returns all topics from a certain URL.
+
+        I.e. an empty string for the home page, ``~group`` for a group or ``search?q=a`` for a search.
+        Appends ``per_page=100`` to the path for maximum results.
+
+        :param str path: The URL to fetch from.
+        :rtype: List[TildesPartialTopic]
+        :return: The requested topics."""
+        r = None
+        if "?" in path:
+            r = self._get(f"/{path}&per_page=100")
+        else:
+            r = self._get(f"/{path}?per_page=100")
+
+        articles = html.fromstring(r.text).cssselect("article.topic")
+        topics = []
+        for article in articles:
+            topics.append(TildesPartialTopic(etree.tostring(article)))
+
+        return topics
+
+    def fetch_filtered_topic_listing(self, group: str = "", tag: str = "", **kwargs):
+        """Fetches a filtered list of topics. Automatically adds ``per_page=100`` to the query string.
+
+        :param str group: The group to filter for. Leave empty to search all subscribed groups.
+        :param str tag: The tag to filter for, Tildes currently only supports filtering for one tag.
+        :rtype: List[TildesPartialTopic]
+        :return: Up to 100 topics matching the filters."""
+        query_str: str = ""
+        if group:
+            query_str += f"~{group}/"
+        if tag:
+            query_str += f"?tag={tag.replace(' ', '_')}"
+        if kwargs:
+            if tag:
+                query_str += "&"
+            else:
+                query_str += "?"
+
+            for k, v in kwargs.items():
+                query_str += f"{k}={v}&"
+
+            query_str = query_str[:-1]
+
+        return self.fetch_topic_listing(query_str)
+
+    def fetch_search_topic_listing(self, query: str = "", **kwargs):
+        """Fetches a search result's list of topics. Automatically adds ``per_page=100`` to the query string.
+
+        :param str query: The string to search for.
+        :rtype: List[TildesPartialTopic]
+        :return: Up to 100 topics matching the query string."""
+        if not query:
+            raise RuntimeError("Query string must not be empty.")
+        query_str: str = f"search?q={query}"
+        if kwargs:
+            query_str += "&"
+
+            for k, v in kwargs.items():
+                query_str += f"{k}={v}&"
+
+            query_str = query_str[:-1]
+
+        return self.fetch_topic_listing(query_str)
 
     def fetch_comment(self, comment_id36: str) -> TildesComment:
         """Fetches, parses and returns a single comment as an object for further processing.

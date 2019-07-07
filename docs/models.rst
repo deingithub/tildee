@@ -3,27 +3,30 @@ Model Classes
 
 These are all representations of "things" on Tildes, created from HTML from the site and provide easy access to the interesting parts of that HTML.
 
-.. autoclass:: tildee.TildesTopic
+.. autoclass:: tildee.models.TildesTopic
    :members:
 
-.. autoclass:: tildee.TildesComment
+.. autoclass:: tildee.models.TildesPartialTopic
    :members:
 
-.. autoclass:: tildee.TildesTopicLogEntry
+.. autoclass:: tildee.models.TildesComment
    :members:
 
-.. autoclass:: tildee.TildesTopicLogEntryKind
+.. autoclass:: tildee.models.TildesTopicLogEntry
    :members:
 
-.. autoclass:: tildee.TildesNotification
+.. autoclass:: tildee.models.TildesTopicLogEntryKind
+   :members:
+
+.. autoclass:: tildee.models.TildesNotification
 	 :members:
 
-.. autoclass:: tildee.TildesNotificationKind
+.. autoclass:: tildee.models.TildesNotificationKind
 	 :members:
 	 :undoc-members:
 
-.. autoclass:: tildee.TildesConversation
+.. autoclass:: tildee.models.TildesConversation
 	 :members:
 
-.. autoclass:: tildee.TildesMessage
+.. autoclass:: tildee.models.TildesMessage
 	 :members:

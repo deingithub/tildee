@@ -44,6 +44,15 @@ If you want to use data from comments or topics, you can use Tildee to fetch the
 .. autofunction:: tildee.TildesClient.fetch_comment
 
 
+Fetching topic listings
+-----------------------
+
+If you either want to fetch topic listings for tags and/or groups or search for a phrase, use the ``fetch_filtered_topic_listing`` or the ``fetch_search_topic_listing`` method. Note that they only return the limited data the topic listing page offers.
+
+.. autofunction:: tildee.TildesClient.fetch_filtered_topic_listing
+
+.. autofunction:: tildee.TildesClient.fetch_search_topic_listing
+
 Interacting with topics
 -----------------------
 
