@@ -18,6 +18,7 @@ class TildesClient:
 
     :param str username: The username to log in with.
     :param str password: The password to log in with.
+    :param Optional[str] totp_code: The 2FA code to use.
     :param str base_url: The site to log in to.
     :param bool verify_ssl: Whether to check SSL certificate validity.
     """
