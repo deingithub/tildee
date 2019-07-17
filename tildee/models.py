@@ -375,3 +375,25 @@ class TildesTopicLogEntryKind(Enum):
     #: | Topic unremoved, no data.
     #: | data: ``None``
     UNREMOVE = auto()
+
+
+class TildesGroup:
+    """Data about a Tildes Group, generated from it's ``<tr>`` tag on the group listing page.
+
+    :ivar str name: The name of the group.
+    :ivar str desc: The group's description.
+    :ivar int num_subscribers: How many users have subscribed to the group.
+    :ivar bool subscribed: If the current user is subscribed to the group."""
+
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+        self.name = self._tree.cssselect("td > a.link-group")[0].text
+        self.desc = self._tree.cssselect("td > p.group-list-description")[0].text
+        self.num_subscribers = int(
+            self._tree.cssselect("td .group-subscription-count")[0]
+            .text.strip()
+            .split(" ")[0]
+        )
+        self.subscribed = False
+        if "Unsubscribe" in self._tree.cssselect("td button")[0].text:
+            self.subscribed = True

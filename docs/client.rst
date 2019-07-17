@@ -53,6 +53,15 @@ If you either want to fetch topic listings for tags and/or groups or search for 
 
 .. autofunction:: tildee.TildesClient.fetch_search_topic_listing
 
+Interacting with groups
+-----------------------
+
+To see what groups your account is subscribed to and which others are available, use ``fetch_groups``, it returns a list of ``TildesGroup``	instances. For details on these see the :doc:`models` page. To (un)subscribe from a group, use the ``set_group_subscription`` method.
+
+.. autofunction:: tildee.TildesClient.fetch_groups
+
+.. autofunction:: tildee.TildesClient.set_group_subscription
+
 Interacting with topics
 -----------------------
 

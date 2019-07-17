@@ -1,4 +1,4 @@
-__version__ = "0.2.3"
+__version__ = "0.3.1"
 
 import requests
 from requests import Response
@@ -9,6 +9,7 @@ from tildee.models import (
     TildesNotification,
     TildesConversation,
     TildesPartialTopic,
+    TildesGroup,
 )
 from typing import Union, List, Optional
 
@@ -445,3 +446,25 @@ class TildesClient:
         :param str subject: The conversation's subject.
         :param str markdown: The first message's content as markdown."""
         self._ic_req(f"/user/{username}/messages", subject=subject, markdown=markdown)
+
+    def fetch_groups(self):
+        """Fetches groups as a list of objects.
+
+        :rtype: List[TildesGroup]
+        :return: All groups on the site as a list."""
+        r = self._get("/groups")
+        tree = html.fromstring(r.text)
+        groups = []
+        for group_entry in tree.cssselect("tbody > tr"):
+            groups.append(TildesGroup(etree.tostring(group_entry)))
+        return groups
+
+    def set_group_subscription(self, group: str, subscribe: bool = True):
+        """(Un)subscribes to/from a group.
+
+        :param str group: The group to target.
+        :param bool subscribe: Whether to add (True) or remove (False) your subscription."""
+        if subscribe:
+            self._ic_req(f"/api/web/group/{group}/subscribe", "PUT")
+        else:
+            self._ic_req(f"/api/web/group/{group}/subscribe", "DELETE")
