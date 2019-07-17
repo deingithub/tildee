@@ -9,6 +9,9 @@ These are all representations of "things" on Tildes, created from HTML from the 
 .. autoclass:: tildee.models.TildesPartialTopic
    :members:
 
+.. autoclass:: tildee.models.TildesGroup
+   :members:
+
 .. autoclass:: tildee.models.TildesComment
    :members:
 
