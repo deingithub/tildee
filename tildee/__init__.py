@@ -10,6 +10,7 @@ from tildee.models import (
     TildesConversation,
     TildesPartialTopic,
     TildesGroup,
+    TildesWikiPage,
 )
 from typing import Union, List, Optional
 
@@ -68,6 +69,7 @@ class TildesClient:
         self._cookies = login_page.cookies
 
         if not "<!DOCTYPE html>" in login_request.text:
+            # Intercooler Response — i.e. TOTP enabled
             if totp_code:
                 totp_request = requests.post(
                     self.base_url + "/login_two_factor",
@@ -492,3 +494,55 @@ class TildesClient:
                 self._ic_req(
                     f"/api/web/comments/{comment_id36}/labels/{label}", "DELETE"
                 )
+
+    def fetch_wiki_page(self, group: str, slug: str):
+        """Fetches a single group wiki page.
+        
+        :param str group: The group to target.
+        :param str slug: The wiki site's slug.
+        :rtype: TildesWikiPage
+        :returns: The wiki page."""
+        r = self._get(f"/~{group}/wiki/{slug}")
+        return TildesWikiPage(r.text)
+
+    def fetch_wiki_page_markdown(self, group: str, slug: str):
+        """Fetches a single group wiki page's markdown. This requires edit permissions.
+        
+        :param str group: The group to target.
+        :param str slug: The wiki page's slug.
+        :rtype: str
+        :returns: The wiki page's content as markdown."""
+        r = self._get(f"/~{group}/wiki/{slug}/edit")
+        tree = html.fromstring(r.text)
+        return tree.cssselect("textarea")[0].text
+
+    def fetch_wiki_page_list(self, group: str):
+        """Fetches the slugs of all wiki pages in a group.
+        
+        :param str group: The group to target.
+        :rtype: List[str]
+        :return: The list of slugs of this group's wiki pages."""
+        r = self._get(f"/~{group}/wiki")
+        slugs = []
+        tree = html.fromstring(r.text)
+        for link in tree.cssselect("main > ul li a"):
+            slugs.append(link.attrib["href"].split("/")[-1])
+
+        return slugs
+
+    def create_wiki_page(self, group: str, title: str, markdown: str):
+        """Creates a wiki page with starting content.
+        
+        :param str group: The group to create a page in.
+        :param str title: The new wiki page's title.
+        :param str markdown: The new wiki page's content."""
+        self._ic_req(f"/~{group}/wiki", page_name=title, markdown=markdown)
+
+    def edit_wiki_page(self, group: str, slug: str, markdown: str, commit: str):
+        """Updates a wiki page's markdown.
+        
+        :param str group: The group to target.
+        :param str slug: The wiki page's slug.
+        :param str markdown: The new markdown for the page.
+        :param str commit: The commit message/edit summary."""
+        self._ic_req(f"/~{group}/wiki/{slug}", edit_message=commit, markdown=markdown)

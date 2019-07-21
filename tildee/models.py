@@ -414,3 +414,27 @@ class TildesGroup:
         self.subscribed = False
         if "Unsubscribe" in self._tree.cssselect("td button")[0].text:
             self.subscribed = True
+
+
+class TildesWikiPage:
+    """Represents a single group wiki page, generated from its entire page.
+    
+    :ivar str title: The page's title.
+    :ivar str slug: The page's slug, i.e. an URL-safe transformation of the title.
+    :ivar str group: The group the page is in.
+    :ivar str content_html: The content of the page as rendered by the site."""
+
+    def __init__(self, text):
+        self._tree = html.fromstring(text)
+        self.title = self._tree.cssselect("h1.heading-main")[0].text
+        self.group = self._tree.cssselect("a.site-header-context")[0].text[1:]
+        # The edit history link's target's last component (the md file) without the ".md"
+        self.slug = (
+            self._tree.cssselect("#sidebar dl a")[0].attrib["href"].split("/")[-1][0:-3]
+        )
+        content = self._tree.cssselect("main")[0]
+        content.remove(content.cssselect("h1.heading-main")[0])
+        content.remove(content.cssselect("a")[-1])
+        content.remove(content.cssselect("p.text-secondary")[-1])
+        content.remove(content.cssselect("hr")[-1])
+        self.content_html = etree.tostring(content)

@@ -132,3 +132,18 @@ To check for new messages, use the ``fetch_unread_message_ids()`` method which r
 		convo = t.fetch_conversation(convo_id36)
 		# Do things here
 		time.sleep(1)
+
+Interacting with group wikis
+----------------------------
+
+You can fetch a group wiki page using ``fetch_wiki_page``, and, if you have editing permissions, its underlying markdown code using ``fetch_wiki_page_markdown``. Fetch a list of all wiki pages in a group using ``fetch_wiki_page_list`` and edit/create new pages using ``edit_wiki_page`` and ``create_wiki_page``, respectively.
+
+.. autofunction:: tildee.TildesClient.fetch_wiki_page_list
+
+.. autofunction:: tildee.TildesClient.fetch_wiki_page
+
+.. autofunction:: tildee.TildesClient.fetch_wiki_page_markdown
+
+.. autofunction:: tildee.TildesClient.edit_wiki_page
+
+.. autofunction:: tildee.TildesClient.create_wiki_page

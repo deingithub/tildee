@@ -36,3 +36,6 @@ These are all representations of "things" on Tildes, created from HTML from the 
 
 .. autoclass:: tildee.models.TildesMessage
 	 :members:
+
+.. autoclass:: tildee.models.TildesWikiPage
+	 :members:
