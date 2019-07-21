@@ -260,7 +260,7 @@ class TildesClient:
     def fetch_comment(self, comment_id36: str) -> TildesComment:
         """Fetches, parses and returns a single comment as an object for further processing.
 
-        This endpoint doesn't include a comments' children.
+        This endpoint doesn't include a comments' children or the applied labels.
 
         :param str comment_id36: The id36 of the comment to fetch.
         :rtype: TildesComment
@@ -468,3 +468,27 @@ class TildesClient:
             self._ic_req(f"/api/web/group/{group}/subscribe", "PUT")
         else:
             self._ic_req(f"/api/web/group/{group}/subscribe", "DELETE")
+
+    def edit_comment_labels(self, comment_id36: str, **kwargs):
+        """Change which labels the account applies to a comment.
+
+        :param str comment_id36: The id36 of the comment to edit.
+        :kwarg Union[bool, str] labelnames: Keyword Arguments: For ``offtopic``, ``noise``, ``joke``, pass a Boolean to set/unset the label. For ``exemplary`` and ``malice``, pass a string to set the label and ``False`` to unset it."""
+
+        for label in kwargs.keys():
+            if kwargs[label]:
+                if isinstance(kwargs[label], str):
+                    self._ic_req(
+                        f"/api/web/comments/{comment_id36}/labels/{label}",
+                        "PUT",
+                        reason=kwargs[label],
+                    )
+                else:
+                    self._ic_req(
+                        f"/api/web/comments/{comment_id36}/labels/{label}", "PUT"
+                    )
+
+            else:
+                self._ic_req(
+                    f"/api/web/comments/{comment_id36}/labels/{label}", "DELETE"
+                )

@@ -82,9 +82,11 @@ You can use Tildee to edit a topic's metadata, e.g. its tags or title (assuming 
 Interacting with comments
 -------------------------
 
-You can use Tildee to interact with comments, i.e. editing and deleting your account's own, voting on other's, bookmarking, and — given admin permissions — removing them.
+You can use Tildee to interact with comments, i.e. editing and deleting your account's own, voting on and labeling other's, bookmarking, and — given admin permissions — removing them.
 
 .. autofunction:: tildee.TildesClient.edit_comment
+
+.. autofunction:: tildee.TildesClient.edit_comment_labels
 
 .. autofunction:: tildee.TildesClient.delete_comment
 

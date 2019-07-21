@@ -9,6 +9,7 @@ class TildesTopic:
     :ivar List[str] tags: List of tags this topic has.
     :ivar str group: The group this topic was posted in.
     :ivar str title: The title of this topic.
+    :ivar str id36: The id36 of the topic.
     :ivar TildesAccessStatus status: Status of this comment. If ``DELETED`` or ``REMOVED``, ``content_html``, ``link``, ``author``, ``timestamp``, ``comments``, ``log``, ``num_votes`` and ``num_comments`` are unavailable.
     :ivar Optional[str] content_html: The text of this topic as rendered by the site.
     :ivar Optional[str] link: The link of this topic.
@@ -27,6 +28,10 @@ class TildesTopic:
         self.tags = []
         for element in self._tree.cssselect("ul.topic-tags > li > a"):
             self.tags.append(element.text)
+
+        self.id36 = (
+            self._tree.cssselect("#sidebar dl input")[0].attrib["value"].split("/")[-1]
+        )
 
         self.title = self._tree.cssselect("article.topic-full > header > h1")[0].text
         try:
@@ -145,6 +150,7 @@ class TildesComment:
         :ivar str id36: The id36 of this comment.
         :ivar TildesAccessStatus status: Status of this comment. If ``DELETED`` or ``REMOVED``, no data beyond ``id36`` are available.
         :ivar str content_html: This comment's content as rendered by the site.
+        :ivar List[str] applied_labels: The labels the account has applied to this comment.
         :ivar str author: The comment author's username.
         :ivar str timestamp: The comment's creation timestamp.
         :ivar int num_votes: The amount of votes this comment has received.
@@ -160,6 +166,17 @@ class TildesComment:
         comments = self._tree.cssselect("ol.comment-tree-replies > li > article")
         for comment in comments:
             self.children.append(TildesComment(etree.tostring(comment)))
+
+        self.applied_labels = []
+        if (
+            "data-comment-user-labels"
+            in self._tree.cssselect("article.comment")[0].attrib
+        ):
+            self.applied_labels = (
+                self._tree.cssselect("article.comment")[0]
+                .attrib["data-comment-user-labels"]
+                .split(" ")
+            )
 
         self.status = TildesAccessStatus.FULL
         if self._tree.cssselect("div.is-comment-removed"):
