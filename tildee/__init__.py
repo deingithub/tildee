@@ -1,8 +1,12 @@
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 import requests
 from requests import Response
 from lxml import html, etree
+from datetime import datetime, timedelta
+import time
+from typing import Union, List, Optional
+
 from tildee.models import (
     TildesTopic,
     TildesComment,
@@ -12,7 +16,6 @@ from tildee.models import (
     TildesGroup,
     TildesWikiPage,
 )
-from typing import Union, List, Optional
 
 
 class TildesClient:
@@ -23,6 +26,7 @@ class TildesClient:
     :param Optional[str] totp_code: The 2FA code to use.
     :param str base_url: The site to log in to.
     :param bool verify_ssl: Whether to check SSL certificate validity.
+    :param int ratelimit: The default cooldown between each request, in milliseconds.
     """
 
     def __init__(
@@ -32,6 +36,7 @@ class TildesClient:
         totp_code: Optional[str] = None,
         base_url: str = "https://tildes.net",
         verify_ssl: bool = True,
+        ratelimit: int = 500
     ):
         self.username = username
         self.base_url = base_url
@@ -40,6 +45,8 @@ class TildesClient:
             "User-Agent": f"tildee.py Client [as {self.username}]",
         }
         self._verify_ssl = verify_ssl
+        self._ratelimit = timedelta(milliseconds=ratelimit)
+        self._lastreq = datetime.utcnow()
         self._login(password, totp_code)
 
     def __del__(self):
@@ -82,20 +89,31 @@ class TildesClient:
             else:
                 raise (RuntimeError("Missing 2FA code."))
 
+        self._lastreq = datetime.utcnow()
+
     def _logout(self):
         self._post("/logout")
 
+    def _wait_for_ratelimit(self):
+        difference = datetime.utcnow() - self._lastreq
+        cooldown = self._ratelimit - difference
+        if cooldown.total_seconds() > 0:
+            time.sleep(cooldown.total_seconds())
+
     def _get(self, route: str) -> Response:
+        self._wait_for_ratelimit()
         r = requests.get(
             self.base_url + route,
             cookies=self._cookies,
             headers=self._headers,
             verify=self._verify_ssl,
         )
+        self._lastreq = datetime.utcnow()
         r.raise_for_status()
         return r
 
     def _post(self, route: str, **kwargs) -> Response:
+        self._wait_for_ratelimit()
         r = requests.post(
             self.base_url + route,
             cookies=self._cookies,
@@ -103,6 +121,7 @@ class TildesClient:
             data={"csrf_token": self._csrf_token, **kwargs},
             verify=self._verify_ssl,
         )
+        self._lastreq = datetime.utcnow()
         r.raise_for_status()
         return r
 
@@ -113,6 +132,7 @@ class TildesClient:
         ic_trigger: Optional[str] = None,
         **kwargs,
     ) -> Response:
+        self._wait_for_ratelimit()
         r = requests.post(
             self.base_url + route,
             cookies=self._cookies,
@@ -128,10 +148,12 @@ class TildesClient:
             },
             verify=self._verify_ssl,
         )
+        self._lastreq = datetime.utcnow()
         r.raise_for_status()
         return r
 
     def _ic_get(self, route: str, **kwargs) -> Response:
+        self._wait_for_ratelimit()
         r = requests.get(
             self.base_url + route,
             cookies=self._cookies,
@@ -139,6 +161,7 @@ class TildesClient:
             data={"csrf_token": self._csrf_token, **kwargs},
             verify=self._verify_ssl,
         )
+        self._lastreq = datetime.utcnow()
         r.raise_for_status()
         return r
 

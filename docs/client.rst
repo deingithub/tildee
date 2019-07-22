@@ -4,13 +4,13 @@ Client Usage
 General
 -------
 
-All methods of the ``TildesClient`` raise if any exception occurs, including unsuccessful HTTP responses from the site. Ratelimiting is not implemented yet, you'll need to add ``time.sleep()`` delays to prevent the site from issuing 429s to you.
+All methods of the ``TildesClient`` raise if any exception occurs, including unsuccessful HTTP responses from the site.
 
 
 Logging in
 ----------
 
-You can connect to Tildes and log in by creating a new ``TildesClient`` instance and passing the login data to the constructor. If you're not connecting to tildes.net, override the ``base_url`` argument. If you're connecting to a local development instance, which uses self-signed SSL certificates, also pass ``verify_ssl = False`` to avoid errors.
+You can connect to Tildes and log in by creating a new ``TildesClient`` instance and passing the login data to the constructor. If you're not connecting to tildes.net, override the ``base_url`` argument. If you're connecting to a local development instance, which uses self-signed SSL certificates, also pass ``verify_ssl = False`` to avoid errors. The automatic ratelimiting is set to 0.5 seconds between each request, but you can adjust it using the ``ratelimit`` parameter. Keep in mind that some actions, like posting topics or comments, are additionally ratelimited, see the `Tildes Source Code <https://gitlab.com/tildes/tildes/blob/master/tildes/tildes/lib/ratelimit.py#L283>`_.
 
 .. autoclass:: tildee.TildesClient
 
