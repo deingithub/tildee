@@ -36,7 +36,7 @@ class TildesClient:
         totp_code: Optional[str] = None,
         base_url: str = "https://tildes.net",
         verify_ssl: bool = True,
-        ratelimit: int = 500
+        ratelimit: int = 500,
     ):
         self.username = username
         self.base_url = base_url
