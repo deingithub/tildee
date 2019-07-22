@@ -10,7 +10,7 @@ class TildesTopic:
     :ivar str group: The group this topic was posted in.
     :ivar str title: The title of this topic.
     :ivar str id36: The id36 of the topic.
-    :ivar TildesAccessStatus status: Status of this comment. If ``DELETED`` or ``REMOVED``, ``content_html``, ``link``, ``author``, ``timestamp``, ``comments``, ``log``, ``num_votes`` and ``num_comments`` are unavailable.
+    :ivar TildesAccessStatus status: Status of this topic. If ``DELETED`` or ``REMOVED``, ``content_html``, ``link``, ``author``, ``timestamp``, ``comments``, ``log``, ``num_votes`` and ``num_comments`` are unavailable.
     :ivar Optional[str] content_html: The text of this topic as rendered by the site.
     :ivar Optional[str] link: The link of this topic.
     :ivar str author: The topic author's username.
@@ -18,6 +18,7 @@ class TildesTopic:
     :ivar int num_votes: The amount of votes this topic has received.
     :ivar int num_comments: The amount of comments on this topic.
     :ivar List[TildesTopicLogEntry] log: The associated topic log in chronological order.
+    :ivar bool is_locked: Whether or not the topic is currently locked.
     :ivar List[TildesComment] comments: Top level comments in this topic."""
 
     def __init__(self, text):
@@ -47,6 +48,11 @@ class TildesTopic:
             ]
         except IndexError:
             self.link = None
+
+        self.is_locked = False
+        toasts = self._tree.cssselect("div.toast")
+        if toasts and "This topic is locked." in toasts[0].text:
+            self.is_locked = True
 
         if self._tree.cssselect("article.topic-full > .text-error"):
             error = self._tree.cssselect("article.topic-full > .text-error")[0]
