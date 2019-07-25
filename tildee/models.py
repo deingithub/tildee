@@ -82,9 +82,12 @@ class TildesTopic:
         except IndexError:
             self.num_votes = 0
 
-        self.num_comments = self._tree.cssselect("header.topic-comments-header > h2")[
-            0
-        ].text.split(" ")[0]
+        try:
+            self.num_comments = self._tree.cssselect("header.topic-comments-header > h2")[
+                0
+            ].text.split(" ")[0]
+        except IndexError:
+            self.num_comments = 0
 
         log_entries = self._tree.cssselect("ol.topic-log-listing > li")
         self.log = []
