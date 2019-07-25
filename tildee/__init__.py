@@ -322,8 +322,6 @@ class TildesClient:
             old_tags = self.fetch_topic(topic_id36).tags
             old_tags = str(old_tags)[1:-1].replace("'", "")
             old_tags = old_tags.replace(", ", ",")
-            print(kwargs["tags"])
-            print(old_tags)
             self._ic_req(
                 f"/api/web/topics/{topic_id36}/tags",
                 "PUT",
