@@ -167,8 +167,8 @@ class TildesClient:
 
     def create_topic(
         self, group: str, title: str, tags: Union[str, List[str]], **kwargs
-    ) -> str:
-        """Post a topic into a group, returns new topic's id36. Either a link or markdown must be passed.
+    ) -> Union[str, List[str]]:
+        """Post a topic into a group, returns new topic's id36. Either a link or markdown must be passed. If this method returns a list instead of a string, there have been previous topics with this link and posting was therefore canceled. Pass the ``confirm_repost=True`` to force posting anyway.
 
         :param str group: The group to post in, without a ~ in front.
         :param str title: The topic's title.
@@ -176,13 +176,21 @@ class TildesClient:
         :param tags: Comma separated string or list of tags.
         :kwarg str markdown: The topic's content as markdown.
         :kwarg str link: The topic's link.
-        :rtype: str
+        :kwarg bool confirm_repost: Whether to submit the topic even if one with the same link was posted before.
+        :rtype: Union[str, List[str]]
         :return: New topic's id36.
         """
         if isinstance(tags, list):
             # Stringify list and remove braces
             tags = str(tags)[1:-1].replace("'", "")
         r = self._post(f"/~{group}/topics", title=title, tags=tags, **kwargs)
+        if r.url.endswith(f"/~{group}/topics"):
+            # We're still on the submission page, i.e. the repost detection got a hit
+            # Extract older topic ID36s from response html
+            tree = html.fromstring(r.text)
+            links = tree.cssselect(".toast-warning ul li a")
+            id36s = [link.attrib["href"].split("/")[-2] for link in links]
+            return id36s
         return r.url.split("/")[-2]
 
     def create_comment(
