@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.4.3"
 
 import requests
 from requests import Response
@@ -27,6 +27,7 @@ class TildesClient:
     :param str base_url: The site to log in to.
     :param bool verify_ssl: Whether to check SSL certificate validity.
     :param int ratelimit: The default cooldown between each request, in milliseconds.
+    :param str user_agent: What to include in the UserAgent string.
     """
 
     def __init__(
@@ -37,12 +38,15 @@ class TildesClient:
         base_url: str = "https://tildes.net",
         verify_ssl: bool = True,
         ratelimit: int = 500,
+        user_agent: str = "",
     ):
         self.username = username
         self.base_url = base_url
+        if user_agent:
+            user_agent += " via "
         self._headers = {
             "Referer": base_url,
-            "User-Agent": f"tildee.py Client [as {self.username}]",
+            "User-Agent": f"{user_agent}tildee.py {__version__} [as {self.username}]",
         }
         self._verify_ssl = verify_ssl
         self._ratelimit = timedelta(milliseconds=ratelimit)
