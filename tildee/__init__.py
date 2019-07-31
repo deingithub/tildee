@@ -1,4 +1,4 @@
-__version__ = "0.4.3"
+__version__ = "0.5.0"
 
 import requests
 from requests import Response
@@ -542,7 +542,7 @@ class TildesClient:
 
     def fetch_wiki_page(self, group: str, slug: str):
         """Fetches a single group wiki page.
-        
+
         :param str group: The group to target.
         :param str slug: The wiki site's slug.
         :rtype: TildesWikiPage
@@ -552,7 +552,7 @@ class TildesClient:
 
     def fetch_wiki_page_markdown(self, group: str, slug: str):
         """Fetches a single group wiki page's markdown. This requires edit permissions.
-        
+
         :param str group: The group to target.
         :param str slug: The wiki page's slug.
         :rtype: str
@@ -563,7 +563,7 @@ class TildesClient:
 
     def fetch_wiki_page_list(self, group: str):
         """Fetches the slugs of all wiki pages in a group.
-        
+
         :param str group: The group to target.
         :rtype: List[str]
         :return: The list of slugs of this group's wiki pages."""
@@ -577,7 +577,7 @@ class TildesClient:
 
     def create_wiki_page(self, group: str, title: str, markdown: str):
         """Creates a wiki page with starting content.
-        
+
         :param str group: The group to create a page in.
         :param str title: The new wiki page's title.
         :param str markdown: The new wiki page's content."""
@@ -585,7 +585,7 @@ class TildesClient:
 
     def edit_wiki_page(self, group: str, slug: str, markdown: str, commit: str):
         """Updates a wiki page's markdown.
-        
+
         :param str group: The group to target.
         :param str slug: The wiki page's slug.
         :param str markdown: The new markdown for the page.

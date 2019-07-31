@@ -413,7 +413,7 @@ class TildesGroup:
 
     def __init__(self, text):
         self._tree = html.fromstring(text)
-        self.name = self._tree.cssselect("td > a.link-group")[0].text
+        self.name = self._tree.cssselect("td > a.link-group")[0].text[1:]
         self.desc = self._tree.cssselect("td > p.group-list-description")[0].text
         self.num_subscribers = int(
             self._tree.cssselect("td .group-subscription-count")[0]
