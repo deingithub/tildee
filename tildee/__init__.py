@@ -275,15 +275,18 @@ class TildesClient:
 
         return self.fetch_topic_listing(query_str)
 
-    def fetch_search_topic_listing(self, query: str = "", **kwargs):
+    def fetch_search_topic_listing(self, query: str = "", group: str = "", **kwargs):
         """Fetches a search result's list of topics. Automatically adds ``per_page=100`` to the query string.
 
         :param str query: The string to search for.
+        :param str group: The group to search in, don't pass the argument to search in all groups.
         :rtype: List[TildesPartialTopic]
         :return: Up to 100 topics matching the query string."""
         if not query:
             raise RuntimeError("Query string must not be empty.")
-        query_str: str = f"search?q={query}"
+        if group:
+            group = f"~{group}/"
+        query_str: str = f"{group}search?q={query}"
         if kwargs:
             query_str += "&"
 
