@@ -315,6 +315,7 @@ class TildesClient:
         :param str topic_id36: The id36 of the topic to act on.
         :type tags: str or List[str]
         :kwarg tags: Comma separated string or list of tags.
+        :kwarg old_tags: Optional (Comma separated string or list): Tags to pass to the overwrite protection, if not passed, ignores overwrite protection.
         :kwarg str group: The new group for the topic, without ~ in front.
         :kwarg str title: The new title for the topic.
         :kwarg str link: The new link for the topic.
@@ -326,9 +327,17 @@ class TildesClient:
                 # Stringify list and remove braces
                 kwargs["tags"] = str(kwargs["tags"])[1:-1].replace("'", "")
 
-            old_tags = self.fetch_topic(topic_id36).tags
-            old_tags = str(old_tags)[1:-1].replace("'", "")
-            old_tags = old_tags.replace(", ", ",")
+            old_tags = []
+
+            if "old_tags" in kwargs:
+                old_tags = kwargs["old_tags"]
+            else:
+                old_tags = self.fetch_topic(topic_id36).tags
+            
+            if isinstance(old_tags, list):
+                old_tags = str(old_tags)[1:-1].replace("'", "")
+                old_tags = old_tags.replace(", ", ",")
+
             self._ic_req(
                 f"/api/web/topics/{topic_id36}/tags",
                 "PUT",
