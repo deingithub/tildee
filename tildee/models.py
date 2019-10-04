@@ -27,7 +27,7 @@ class TildesTopic:
         self.group = self._tree.cssselect("a.site-header-context")[0].text[1:]
 
         self.tags = []
-        for element in self._tree.cssselect("ul.topic-tags > li > a"):
+        for element in self._tree.cssselect(".topic-full-tags > a"):
             self.tags.append(element.text)
 
         self.id36 = (
@@ -112,7 +112,7 @@ class TildesPartialTopic:
     :ivar Optional[str] content_html: The text of this topic as rendered by the site, if available.
     :ivar int num_votes: The amount of votes this topic has received.
     :ivar int num_comments: The amount of comments on this topic.
-    :ivar List[str] tags: The tags on this topics.
+    :ivar List[str] tags: The tags on this topic. Can be incomplete or missing if you have the "Show topic tags in listing pages" setting disabled.
     :ivar str timestamp: The topic's timestamp."""
 
     def __init__(self, text):
